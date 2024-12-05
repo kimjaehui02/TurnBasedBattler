@@ -1,0 +1,44 @@
+# Ignore the build directory
+/build/
+/bin/
+/obj/
+/Debug/
+/Release/
+
+# Ignore Visual Studio specific files
+.vs/
+.vscode/
+
+# Ignore user-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# Ignore the directory containing the project settings
+.vs2019/
+
+# Ignore the generated files by Visual Studio for debugging
+*.pdb
+*.idb
+*.ipch
+*.aps
+
+# Ignore compiled output and libraries
+*.dll
+*.exe
+*.lib
+*.so
+*.a
+*.dylib
+
+# Ignore static analysis files
+*.log
+
+# Ignore the CMake cache files
+CMakeCache.txt
+CMakeFiles/
+CMakeLists.txt.user
+
+# Ignore generated files from specific builds
+*.cmake
