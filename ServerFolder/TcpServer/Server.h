@@ -1,4 +1,3 @@
-// Server.h
 #ifndef SERVER_H
 #define SERVER_H
 
@@ -8,6 +7,7 @@
 #include <mutex>
 #include <atomic>
 #include <winsock2.h>
+#include "ServerState.h"  // ServerState 클래스 포함
 
 class Server {
 public:
@@ -21,11 +21,15 @@ private:
     void acceptConnections();  // 클라이언트 연결 처리
     void handleClient(SOCKET clientSocket);  // 클라이언트 처리
 
+    void startConnections();
+    void updateClient(char* buffer, int* bytesReceived, SOCKET* clientSocket);
+
     int port;  // 서버 포트
     SOCKET serverSocket;  // 서버 소켓
     std::atomic<bool> running;  // 서버 실행 여부
     std::vector<std::thread> clientThreads;  // 클라이언트 핸들링 스레드들
     std::mutex mtx;  // 멀티스레드 안전을 위한 뮤텍스
+    ServerState serverState;  // ServerState 인스턴스
 };
 
 #endif

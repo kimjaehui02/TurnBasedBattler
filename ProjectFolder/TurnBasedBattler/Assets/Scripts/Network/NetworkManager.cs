@@ -3,6 +3,8 @@ using System.Text;         // 문자열을 바이트 배열로 변환하기 위한 네임스페이스
 using UnityEngine;         // Unity 관련 기능을 사용하기 위한 네임스페이스
 using System;
 
+
+
 public class NetworkManager : MonoBehaviour
 {
     #region Singleton Pattern
@@ -64,20 +66,23 @@ public class NetworkManager : MonoBehaviour
 
 
     // 서버로 메시지를 전송하는 메서드
-    public void SendMessage(string message)
+    public void SendNetworkMessage(string type, string data)
     {
         // 네트워크 스트림이 null인 경우 전송하지 않음
         if (_stream == null) return;
 
-        // 문자열 메시지를 UTF-8 바이트 배열로 변환
-        byte[] data = Encoding.UTF8.GetBytes(message);
+        // RequestMessage 객체를 생성하여 전송할 데이터 설정
+        RequestMessage requestMessage = new RequestMessage(type, data);
 
-        // 네트워크 스트림을 통해 데이터를 서버로 전송
-        _stream.Write(data, 0, data.Length);
+        // 객체를 JSON 문자열로 직렬화
+        string jsonMessage = JsonUtility.ToJson(requestMessage);
 
-        // 전송한 메시지를 로그로 출력
-        Debug.Log("Message Sent: " + message);
+        byte[] dataBytes = Encoding.UTF8.GetBytes(jsonMessage);
+        _stream.Write(dataBytes, 0, dataBytes.Length);
+
+        Debug.Log("Message Sent: " + jsonMessage);
     }
+
 
     // 서버와의 연결을 종료하는 메서드
     public void Disconnect()
@@ -90,5 +95,18 @@ public class NetworkManager : MonoBehaviour
 
         // 연결 종료 메시지를 로그로 출력
         Debug.Log("Disconnected from Server");
+    }
+}
+
+[System.Serializable]
+public class RequestMessage
+{
+    public string command;
+    public string data;
+
+    public RequestMessage(string command, string data)
+    {
+        this.command = command;
+        this.data = data;
     }
 }

@@ -140,11 +140,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="UpdateHandler.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="Server.h" />
+    <ClInclude Include="ServerState.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="UpdateHandler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Server.cpp" />
+    <ClCompile Include="ServerState.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
