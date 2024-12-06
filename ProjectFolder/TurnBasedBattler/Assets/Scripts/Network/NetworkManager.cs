@@ -1,100 +1,136 @@
-using System.Net.Sockets;  // TCP 네트워크 연결을 위해 사용되는 네임스페이스
-using System.Text;         // 문자열을 바이트 배열로 변환하기 위한 네임스페이스
-using UnityEngine;         // Unity 관련 기능을 사용하기 위한 네임스페이스
+using UnityEngine;
+using System.Net.Sockets;
+using System.Text;
 using System;
-
-
+using System.Collections;
 
 public class NetworkManager : MonoBehaviour
 {
     #region Singleton Pattern
-    // NetworkManager 클래스의 인스턴스를 저장하는 정적 변수 (싱글톤 패턴)
     private static NetworkManager _instance;
 
-    // 외부에서 NetworkManager의 인스턴스에 접근할 수 있게 하는 프로퍼티
     public static NetworkManager Instance => _instance;
 
-    // 이 스크립트가 첫 실행될 때 호출되는 메서드
     private void Awake()
     {
-        // Singleton 패턴을 적용하여 NetworkManager가 하나만 존재하도록 보장
         if (_instance == null)
-            _instance = this;  // 첫 번째 인스턴스를 설정
+            _instance = this;
         else
-            Destroy(gameObject);  // 두 번째 이후 인스턴스는 파괴
+            Destroy(gameObject);
 
-        // 씬 전환 시에도 이 객체가 파괴되지 않도록 설정
         DontDestroyOnLoad(gameObject);
     }
     #endregion
 
-    // TCP 연결을 위한 TcpClient 객체 (서버와의 연결을 담당)
     private TcpClient _client;
-
-    // 네트워크 스트림 (서버와의 데이터 송수신을 담당)
     private NetworkStream _stream;
+    private bool _isConnected = false;
 
-    // 서버에 연결하는 메서드 (IP 주소와 포트 번호를 매개변수로 받음)
+    // 서버에 연결하는 메서드
     public void ConnectToServer(string ip, int port)
     {
         try
         {
-            // TcpClient 객체를 생성하여 서버와의 연결을 준비
             _client = new TcpClient();
-
-            // 서버에 IP와 포트 번호를 통해 연결
             _client.Connect(ip, port);
-
-            // 연결이 완료되면 네트워크 스트림을 가져옴
             _stream = _client.GetStream();
-
-            // 연결 성공 메시지를 로그로 출력
+            _isConnected = true;
             Debug.Log("Connected to Server");
-        }
-        catch (SocketException e)
-        {
-            // 서버에 연결할 수 없을 때의 처리 (예: 서버가 꺼져 있을 때)
-            Debug.LogError("Failed to connect to server: " + e.Message);
-            // 추가적으로 재시도 로직을 구현할 수도 있습니다.
         }
         catch (Exception e)
         {
-            // 다른 예외가 발생했을 경우 처리
-            Debug.LogError("An error occurred: " + e.Message);
+            Debug.LogError("Connection failed: " + e.Message);
         }
     }
-
 
     // 서버로 메시지를 전송하는 메서드
     public void SendNetworkMessage(string type, string data)
     {
-        // 네트워크 스트림이 null인 경우 전송하지 않음
-        if (_stream == null) return;
+        if (_stream == null || !_isConnected) return;
 
-        // RequestMessage 객체를 생성하여 전송할 데이터 설정
         RequestMessage requestMessage = new RequestMessage(type, data);
-
-        // 객체를 JSON 문자열로 직렬화
         string jsonMessage = JsonUtility.ToJson(requestMessage);
-
         byte[] dataBytes = Encoding.UTF8.GetBytes(jsonMessage);
         _stream.Write(dataBytes, 0, dataBytes.Length);
-
         Debug.Log("Message Sent: " + jsonMessage);
     }
 
+    // Update 메서드에서 서버로부터 메시지를 받는 방법
+    private void Update()
+    {
+        if (_isConnected && _stream != null)
+        {
+            ReceiveMessages();
+        }
+    }
+
+    // 서버로부터 메시지를 받는 메서드
+    private void ReceiveMessages()
+    {
+        if (_stream.DataAvailable)
+        {
+            byte[] buffer = new byte[1024];
+            int bytesRead = _stream.Read(buffer, 0, buffer.Length);
+
+            if (bytesRead > 0)
+            {
+                string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                Debug.Log("Received message: " + receivedMessage);
+                HandleServerResponse(receivedMessage);
+            }
+        }
+    }
+
+    // 서버 응답을 처리하는 메서드
+    private void HandleServerResponse(string jsonMessage)
+    {
+        try
+        {
+            ResponseMessage responseMessage = JsonUtility.FromJson<ResponseMessage>(jsonMessage);
+
+            switch (responseMessage.command)
+            {
+                case "PONG":
+                    Debug.Log("Received PONG response from server");
+                    break;
+
+                case "RequestInitialData":
+                    Debug.Log("Received initial data: " + responseMessage.data);
+                    break;
+
+                case "CustomCommand":
+                    Debug.Log("Received custom command response: " + responseMessage.data);
+                    break;
+
+                default:
+                    Debug.LogWarning("Unknown command: " + responseMessage.command);
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error parsing server response: " + e.Message);
+        }
+    }
 
     // 서버와의 연결을 종료하는 메서드
     public void Disconnect()
     {
-        // 스트림이 열려 있다면 닫음
-        _stream?.Close();
-
-        // TCP 클라이언트 연결이 열려 있다면 닫음
-        _client?.Close();
-
-        // 연결 종료 메시지를 로그로 출력
-        Debug.Log("Disconnected from Server");
+        try
+        {
+            _isConnected = false;
+            _stream?.Close();
+            _client?.Close();
+            Debug.Log("Disconnected from Server");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error during disconnect: " + e.Message);
+        }
+    }
+    public bool IsConnected()
+    {
+        return _client != null && _client.Connected;
     }
 }
 
@@ -109,4 +145,11 @@ public class RequestMessage
         this.command = command;
         this.data = data;
     }
+}
+
+[System.Serializable]
+public class ResponseMessage
+{
+    public string command;
+    public string data;
 }

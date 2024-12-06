@@ -40,9 +40,12 @@ void UpdateHandler::processRequest(char* buffer, int bytesReceived) {
 }
 
 void UpdateHandler::handleInitialDataRequest() {
+
     // 응답 메시지 생성
-    std::string response = "Initial data response from server";
-    sendResponse(response);   // 응답 전송
+    json response;
+    response["command"] = "PONG";
+    response["message"] = "Initial data response from server";
+    sendResponse(response.dump());
 }
 
 void UpdateHandler::sendResponse(const std::string& response) {
