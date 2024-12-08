@@ -1,0 +1,7 @@
+D:\teamUnity\TurnBasedBattler\ServerFolder\UDPServer\UDPServer\bin\Debug\UDPServer.exe.config
+D:\teamUnity\TurnBasedBattler\ServerFolder\UDPServer\UDPServer\bin\Debug\UDPServer.exe
+D:\teamUnity\TurnBasedBattler\ServerFolder\UDPServer\UDPServer\bin\Debug\UDPServer.pdb
+D:\teamUnity\TurnBasedBattler\ServerFolder\UDPServer\UDPServer\obj\Debug\UDPServer.csproj.AssemblyReference.cache
+D:\teamUnity\TurnBasedBattler\ServerFolder\UDPServer\UDPServer\obj\Debug\UDPServer.csproj.CoreCompileInputs.cache
+D:\teamUnity\TurnBasedBattler\ServerFolder\UDPServer\UDPServer\obj\Debug\UDPServer.exe
+D:\teamUnity\TurnBasedBattler\ServerFolder\UDPServer\UDPServer\obj\Debug\UDPServer.pdb
