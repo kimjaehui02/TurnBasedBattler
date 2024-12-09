@@ -18,7 +18,7 @@ namespace UDPServer
             while (true)
             {
                 // 클라이언트로부터 메시지를 수신
-                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 11000);
+                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 8080);
                 byte[] receivedData = udpServer.Receive(ref remoteEndPoint);
                 string receivedMessage = Encoding.UTF8.GetString(receivedData);
 
