@@ -2,15 +2,17 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 class UdpServer
 {
+    #region 통신용 변수들
     private const int Port = 7777; // 서버 포트
-    private static int Frequency = 15; // 초당 처리 횟수
+    #endregion
+
     private static Dictionary<int, Player> players = new Dictionary<int, Player>(); // 플레이어 관리
     private static Dictionary<int, IPEndPoint> playerEndpoints = new Dictionary<int, IPEndPoint>(); // 플레이어의 IP와 포트 관리
     private static Queue<int> availablePlayerIds = new Queue<int>(); // 사용되지 않은 플레이어 ID 관리
@@ -22,8 +24,6 @@ class UdpServer
         UdpClient udpServer = new UdpClient(Port);
         IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
 
-        // 기본 주기로 설정
-        Console.WriteLine($"기본 주기: 초당 {Frequency}회");
 
         // CancellationTokenSource 생성
         var cancellationTokenSource = new CancellationTokenSource();
@@ -42,7 +42,6 @@ class UdpServer
         Console.WriteLine("서버가 종료되었습니다.");
     }
 
-
     static async Task RunServerAsync(UdpClient udpServer, IPEndPoint remoteEP, CancellationToken token)
     {
         while (!token.IsCancellationRequested)
@@ -54,7 +53,7 @@ class UdpServer
                 string message = Encoding.UTF8.GetString(data);
 
                 // JSON 데이터를 디시리얼화해서 객체로 변환
-                var clientRequest = JsonSerializer.Deserialize<ClientRequest>(message);
+                var clientRequest = JsonConvert.DeserializeObject<ClientRequest>(message); // JsonConvert로 변경
                 Console.WriteLine($"수신: {clientRequest.action} from {remoteEP} (PlayerId: {clientRequest.playerId})");
                 Console.WriteLine("받은 메세지의 내용입니다: " + message);
 
@@ -71,7 +70,7 @@ class UdpServer
                         data = newPlayerId.ToString()
                     };
 
-                    string responseJson = JsonSerializer.Serialize(response);
+                    string responseJson = JsonConvert.SerializeObject(response); // JsonConvert로 변경
                     byte[] responseData = Encoding.UTF8.GetBytes(responseJson);
                     udpServer.Send(responseData, responseData.Length, remoteEP);
                     Console.WriteLine($"응답: {responseJson} to {remoteEP}");
@@ -132,7 +131,7 @@ class UdpServer
                             {
                                 command = $"Player {playerId} has been removed."
                             };
-                            string responseJson = JsonSerializer.Serialize(response);
+                            string responseJson = JsonConvert.SerializeObject(response); // JsonConvert로 변경
                             byte[] responseData = Encoding.UTF8.GetBytes(responseJson);
                             udpServer.Send(responseData, responseData.Length, remoteEP);
 
@@ -142,8 +141,6 @@ class UdpServer
                     }
                 }
 
-                // 초당 처리 횟수에 맞추어 대기
-                await Task.Delay(1000 / Frequency, token);
             }
             catch (Exception ex)
             {
@@ -151,7 +148,6 @@ class UdpServer
             }
         }
     }
-
 
     static int AssignPlayerId(IPEndPoint remoteEP)
     {
@@ -181,7 +177,7 @@ class UdpServer
             playerList.players.Add(player);
         }
 
-        string json = JsonSerializer.Serialize(playerList);
+        string json = JsonConvert.SerializeObject(playerList); // JsonConvert로 변경
 
         // 모든 플레이어에게 전송 (자기 자신에게는 전송하지 않음)
         foreach (var player in playerEndpoints)
@@ -197,35 +193,19 @@ class UdpServer
         }
     }
 
-    // 클라이언트 요청 정보를 담을 클래스
-    private class ClientRequest
+    #region json선언부
+    public enum ConnectionState
     {
-        public int? playerId { get; set; } // Nullable로 변경
-        public string action { get; set; }
-        public float? x { get; set; } // Nullable로 변경
-        public float? y { get; set; } // Nullable로 변경
+        Default,      // 기본 상태
+        Connecting,   // 연결 시도 중
+        DataSyncing,  // 데이터 동기화 중
+        Disconnecting,// 연결 종료 시도 중
+        Error         // 오류 발생
     }
 
-    // 서버 응답을 담을 클래스
-    // 서버 응답을 담을 클래스
-    public class ServerResponse
-    {
-        public string command { get; set; }
-        public string data { get; set; }
-    }
+    #endregion
 
 
-    // 플레이어 정보를 담을 클래스
-    private class Player
-    {
-        public int Id { get; set; }
-        public float X { get; set; }
-        public float Y { get; set; }
-    }
 
-    // 플레이어 리스트를 담을 클래스
-    private class PlayerList
-    {
-        public List<Player> players = new List<Player>();
-    }
+
 }

@@ -1,0 +1,217 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System;
+using Newtonsoft.Json;
+using System.Collections;
+using UnityEditor.VersionControl;
+
+public class UdpClientManager : MonoBehaviour
+{
+    #region 통신용 변수들
+    private const string ServerIp = "127.0.0.1"; // 서버 IP
+    private const int ServerPort = 7777; // 서버 포트
+    private UdpClient udpClient;
+    public int myId = -1;  // 내 id, 서버에서 받아온 값으로 설정
+
+    private float sendInterval = 0.05f; // 좌표 전송 간격
+    private float lastSendTime = 0f;
+    #endregion
+
+    #region 게임플레이용 변수들
+    public GameObject playerPrefab;  // 플레이어 오브젝트의 프리팹을 에디터에서 드래그 앤 드롭으로 설정
+    private Dictionary<int, GameObject> playerObjects = new Dictionary<int, GameObject>();
+    public GameObject myPlayerObject; // 내 플레이어 오브젝트
+
+    #endregion
+
+    #region json선언부
+    public enum ConnectionState
+    {
+        Default,      // 기본 상태
+        Connecting,   // 연결 시도 중
+        DataSyncing,  // 데이터 동기화 중
+        Disconnecting,// 연결 종료 시도 중
+        Error         // 오류 발생
+    }
+    #endregion
+
+    #region 송신함수
+    public void SendToUDPServer(ConnectionState connectionState, object messageData)
+    {
+
+        Debug.Log($"SendToUDPServer실행 connectionState : {connectionState}, messageData : {messageData} ");
+
+        try
+        {
+            // 메시지 구성
+            var message = new
+            {
+                connectionState = connectionState.ToString(), // Enum 값을 문자열로 변환
+                data = messageData
+            };
+
+            // 객체를 JSON 문자열로 직렬화
+            string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented);
+
+            // 디버깅용으로 JSON 출력
+            Debug.Log($"보내는 JSON: {jsonMessage}");
+
+            // UDP를 통해 서버로 메시지 전송
+            byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
+            udpClient.Send(data, data.Length);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"UDP 전송 중 오류 발생: {ex.Message}");
+        }
+    }
+    #endregion
+
+    #region 수신함수
+    public void ReceiveFromUDPServer(IAsyncResult ar)
+    {
+        
+        // 데이터 수신을 위한 끝점 정의
+        IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, ServerPort);
+
+        try
+        {
+            // UDP 클라이언트를 사용하여 데이터 수신
+            byte[] data = udpClient.EndReceive(ar, ref endPoint);
+
+            // 바이트 배열을 UTF-8 문자열로 변환
+            string json = Encoding.UTF8.GetString(data);
+
+            // 수신한 JSON 데이터를 콘솔에 출력
+            Debug.Log("Received data: " + json);
+
+            // JSON 문자열을 Newtonsoft.Json으로 처리 (dynamic 사용)
+            try
+            {
+                // JSON 파싱 (Newtonsoft.Json 사용)
+                var message = JsonConvert.DeserializeObject<dynamic>(json);
+                Debug.Log($"ReceiveFromUDPServer종료 message : {message}");
+                if (message != null)
+                {
+                    // 'connectionState'에 따라 처리
+                    HandleConnectionState(message);
+                }
+                else
+                {
+                    Debug.Log("Failed to parse JSON.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // JSON 파싱 예외 처리
+                Debug.LogError($"Error parsing JSON: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // 예외 처리: 데이터 수신 중 오류 발생 시
+            Debug.LogError($"Error receiving data: {ex.Message}");
+        }
+
+        
+        // 계속해서 데이터를 수신할 수 있도록 대기
+        udpClient.BeginReceive(ReceiveFromUDPServer, null);
+    }
+
+    private void HandleConnectionState(dynamic message)
+    {
+        string connectionState = message.connectionState;
+
+        switch (connectionState)
+        {
+            case "Connecting":
+                HandleConnecting(message);
+                break;
+
+            case "DataSyncing":
+                HandleDataSyncing(message);
+                break;
+
+            case "Disconnecting":
+                HandleDisconnecting(message);
+                break;
+
+            case "Error":
+                HandleError(message);
+                break;
+
+            default:
+                Debug.Log($"Unknown connection state: {connectionState}");
+                break;
+        }
+    }
+
+    private void HandleConnecting(dynamic message)
+    {
+        Debug.Log("Handling Connecting state...");
+    }
+
+    private void HandleDataSyncing(dynamic message)
+    {
+        Debug.Log("Handling Data Syncing state...");
+    }
+
+    private void HandleDisconnecting(dynamic message)
+    {
+        Debug.Log("Handling Disconnecting state...");
+    }
+
+    private void HandleError(dynamic message)
+    {
+        Debug.Log("Handling Error state...");
+    }
+    #endregion
+
+    #region 통신 시작, 지속적 송수신, 종료 알림
+    // 1. 서버 참여 요청
+    void Start()
+    {
+        udpClient = new UdpClient(ServerIp, ServerPort);
+
+        // 서버에 연결 요청 보내기
+        SendToUDPServer(ConnectionState.Connecting, new { playerName = "Player1" });
+
+        // 지속적인 통신 시작
+        udpClient.BeginReceive(ReceiveFromUDPServer, null);
+    }
+
+    //// 2. 초당 고정 횟수로 데이터를 주고받기
+    //private float lastSendTime = 0f;  // 마지막 전송 시간
+    //private float sendInterval = 0.05f; // 전송 간격 (초)
+
+    void Update()
+    {
+        // 실제 경과 시간을 기준으로 비교
+        float currentTime = Time.realtimeSinceStartup;
+
+        // 일정 간격마다 데이터 전송
+        if (currentTime - lastSendTime >= sendInterval)
+        {
+            // 데이터 전송 함수 호출
+            SendToUDPServer(ConnectionState.DataSyncing, new { position = myPlayerObject.transform.position });
+
+            // 마지막 전송 시간 갱신
+            lastSendTime = currentTime;
+        }
+    }
+
+    // 3. 종료 통신 (수동 종료 또는 강제 종료 시)
+    public void OnApplicationQuit()
+    {
+        // 종료 알리기
+        SendToUDPServer(ConnectionState.Disconnecting, new { playerId = myId });
+
+        // UDP 클라이언트 종료
+        udpClient.Close();
+        Debug.Log("Disconnected and closed UDP client.");
+    }
+    #endregion
+}
