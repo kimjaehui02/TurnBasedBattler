@@ -19,10 +19,21 @@ public:
 
 private:
     void acceptConnections();  // 클라이언트 연결 처리
-    void handleClient(SOCKET clientSocket);  // 클라이언트 처리
+    //void handleClient(SOCKET clientSocket);  // 클라이언트 처리
 
-    void startConnections();
-    void updateClient(char* buffer, int* bytesReceived, SOCKET* clientSocket);
+    //void startConnections();
+
+    void RunServerAsync(SOCKET clientSocket);
+
+    // 클라이언트간의 교류
+    void SendToTCPClient();
+    void ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesReceived);
+
+    // UDP서버간의 교류
+    void SendToUDPServer();
+    void ReceiveFromUDPServer();
+
+    void HandleConnectionState();
 
     int port;  // 서버 포트
     SOCKET serverSocket;  // 서버 소켓

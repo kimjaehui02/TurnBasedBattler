@@ -11,6 +11,8 @@ public:
     UpdateHandler(SOCKET clientSocket);
     void processRequest(char* buffer, int bytesReceived);
 
+    void HandleConnectionState();
+
 private:
     void handleInitialDataRequest();
     void sendResponse(const std::string& response);

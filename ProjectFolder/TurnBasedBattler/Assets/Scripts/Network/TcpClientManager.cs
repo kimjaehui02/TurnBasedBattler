@@ -3,153 +3,236 @@ using System.Net.Sockets;
 using System.Text;
 using System;
 using System.Collections;
+using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 public class TcpClientManager : MonoBehaviour
 {
-    #region Singleton Pattern
-    private static TcpClientManager _instance;
-
-    public static TcpClientManager Instance => _instance;
-
-    private void Awake()
-    {
-        if (_instance == null)
-            _instance = this;
-        else
-            Destroy(gameObject);
-
-        DontDestroyOnLoad(gameObject);
-    }
-    #endregion
-
+    #region 통신용 변수들
+    private const string ServerIp = "127.0.0.1";  // 서버 IP
+    private const int ServerPort = 8080;  // 서버 포트
     private TcpClient _client;
     private NetworkStream _stream;
     private bool _isConnected = false;
+    #endregion
 
-    // 서버에 연결하는 메서드
-    public void ConnectToServer(string ip, int port)
+    #region 게임플레이용 변수들
+    public GameObject myPlayerObject;  // 내 플레이어 오브젝트
+    #endregion
+
+    #region json선언부
+    public enum ConnectionState
+    {
+        Default,      // 기본 상태
+        Connecting,   // 연결 시도 중
+        DataSyncing,  // 데이터 동기화 중
+        Disconnecting,// 연결 종료 시도 중
+        Error,        // 오류 발생
+        TcpToUdp      // tcp에서 udp로 이동시킵니다
+    }
+    #endregion
+
+    #region 송신함수
+    public void SendToTcpServer(ConnectionState connectionState, object messageData)
     {
         try
         {
-            _client = new TcpClient();
-            _client.Connect(ip, port);
-            _stream = _client.GetStream();
-            _isConnected = true;
-            Debug.Log("Connected to Server");
+            // 메시지 구성
+            var message = new
+            {
+                connectionState = connectionState.ToString(), // Enum 값을 문자열로 변환
+                data = messageData
+            };
+
+            // 직렬화 시 무한 참조 방지 설정
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+
+            // 객체를 JSON 문자열로 직렬화
+            string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented, settings);
+
+            // 디버깅용으로 JSON 출력
+            Debug.Log($"보내는 JSON: {jsonMessage}");
+
+            // TCP를 통해 서버로 메시지 전송
+            byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
+            _stream.Write(data, 0, data.Length);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Debug.LogError("Connection failed: " + e.Message);
+            Debug.LogError($"TCP 전송 중 오류 발생: {ex.Message}");
         }
     }
+    #endregion
 
-    // 서버로 메시지를 전송하는 메서드
-    public void SendNetworkMessage(string type, string data)
+    #region 수신함수
+    public async Task ReceiveFromTCPServerAsync()
     {
-        if (_stream == null || !_isConnected) return;
-
-        RequestMessage requestMessage = new RequestMessage(type, data);
-        string jsonMessage = JsonUtility.ToJson(requestMessage);
-        byte[] dataBytes = Encoding.UTF8.GetBytes(jsonMessage);
-        _stream.Write(dataBytes, 0, dataBytes.Length);
-        Debug.Log("Message Sent: " + jsonMessage);
-    }
-
-    // Update 메서드에서 서버로부터 메시지를 받는 방법
-    private void Update()
-    {
-        if (_isConnected && _stream != null)
-        {
-            ReceiveMessages();
-        }
-    }
-
-    // 서버로부터 메시지를 받는 메서드
-    private void ReceiveMessages()
-    {
-        if (_stream.DataAvailable)
+        try
         {
             byte[] buffer = new byte[1024];
-            int bytesRead = _stream.Read(buffer, 0, buffer.Length);
-
-            if (bytesRead > 0)
+            while (_client.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
             {
-                string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                Debug.Log("Received message: " + receivedMessage);
-                HandleServerResponse(receivedMessage);
+                try
+                {
+                    int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length); // 비동기적으로 데이터 수신
+
+                    if (bytesRead > 0)
+                    {
+                        byte[] data = new byte[bytesRead];
+                        Array.Copy(buffer, 0, data, 0, bytesRead);
+
+                        // 받은 데이터를 UTF-8 문자열로 변환
+                        string json = Encoding.UTF8.GetString(data);
+
+                        // JSON 처리
+                        try
+                        {
+                            var message = JsonConvert.DeserializeObject<dynamic>(json);
+                            if (message != null)
+                            {
+                                HandleConnectionState(message);  // 상태 처리
+                            }
+                            else
+                            {
+                                Debug.Log("Failed to parse JSON.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Log($"Error parsing JSON: {ex.Message}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.Log($"Error reading data: {ex.Message}");
+                    break; // 오류 발생 시 연결 종료
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Debug.Log($"Error receiving data: {ex.Message}");
         }
     }
 
-    // 서버 응답을 처리하는 메서드
-    private void HandleServerResponse(string jsonMessage)
+
+    private void HandleConnectionState(dynamic message)
+    {
+        string connectionState = message.connectionState;
+
+        switch (connectionState)
+        {
+            case "Connecting":
+                HandleConnecting(message);
+                break;
+
+            case "DataSyncing":
+                HandleDataSyncing(message);
+                break;
+
+            case "Disconnecting":
+                HandleDisconnecting(message);
+                break;
+
+            case "Error":
+                HandleError(message);
+                break;
+
+            default:
+                Debug.Log($"Unknown connection state: {connectionState}");
+                break;
+        }
+    }
+
+
+    private void HandleConnecting(dynamic message)
+    {
+        Debug.Log("Handling Connecting state...");
+
+    }
+
+    private void HandleDataSyncing(dynamic message)
+    {
+        Debug.Log("Handling Data Syncing state...");
+    }
+
+    private void HandleDisconnecting(dynamic message)
+    {
+        Debug.Log("Handling Disconnecting state...");
+    }
+
+    private void HandleError(dynamic message)
+    {
+        Debug.Log("Handling Error state...");
+    }
+
+    #endregion
+
+    #region 연결 및 종료 처리
+    // 서버와 연결을 시작하는 메서드
+    public async Task StartConnection()
     {
         try
         {
-            ResponseMessage responseMessage = JsonUtility.FromJson<ResponseMessage>(jsonMessage);
+            // TCP 클라이언트 연결
+            _client = new TcpClient(ServerIp, ServerPort);
+            _stream = _client.GetStream();
+            _isConnected = true;
+            Debug.Log("서버에 연결되었습니다.");
 
-            switch (responseMessage.command)
-            {
-                case "PONG":
-                    Debug.Log("Received PONG response from server");
-                    break;
+            // 서버와 연결 후 초기화 작업
+            SendToTcpServer(ConnectionState.Connecting, new { playerName = "Player1" });
 
-                case "RequestInitialData":
-                    Debug.Log("Received initial data: " + responseMessage.data);
-                    break;
-
-                case "CustomCommand":
-                    Debug.Log("Received custom command response: " + responseMessage.data);
-                    break;
-
-                default:
-                    Debug.LogWarning("Unknown command: " + responseMessage.command);
-                    break;
-            }
+            // TCP 데이터 수신 시작
+            await ReceiveFromTCPServerAsync();
+            Debug.Log("TCP 데이터 수신 종료");
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Debug.LogError("Error parsing server response: " + e.Message);
+            Debug.LogError($"서버 연결 중 오류 발생: {ex.Message}");
         }
     }
 
-    // 서버와의 연결을 종료하는 메서드
-    public void Disconnect()
+
+    private async void Start()
+    {
+        await StartConnection();
+    }
+
+    // 연결된 서버와 통신을 계속할 수 있게 하는 메서드 (매 프레임마다 호출)
+    void Update()
+    {
+
+    }
+
+    // 서버와 연결을 종료하는 메서드
+    public void Quit()
     {
         try
         {
-            _isConnected = false;
-            _stream?.Close();
-            _client?.Close();
-            Debug.Log("Disconnected from Server");
+            if (_isConnected)
+            {
+                _isConnected = false;
+                _stream?.Close();
+                _client?.Close();
+                Debug.Log("서버와의 연결을 종료했습니다.");
+            }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Debug.LogError("Error during disconnect: " + e.Message);
+            Debug.LogError($"연결 종료 중 오류 발생: {ex.Message}");
         }
     }
-    public bool IsConnected()
+
+    // 애플리케이션 종료 시 호출
+    public void OnApplicationQuit()
     {
-        return _client != null && _client.Connected;
+        Quit();
     }
+    #endregion
 }
 
-[System.Serializable]
-public class RequestMessage
-{
-    public string command;
-    public string data;
-
-    public RequestMessage(string command, string data)
-    {
-        this.command = command;
-        this.data = data;
-    }
-}
-
-[System.Serializable]
-public class ResponseMessage
-{
-    public string command;
-    public string data;
-}

@@ -14,7 +14,7 @@
  * removed, but marked deprecated. See "Generate documentation" section in  *
  * file docs/README.md.                                                     *
 \****************************************************************************/
-
+#pragma warning(disable: 28020)
 #ifndef INCLUDE_NLOHMANN_JSON_HPP_
 #define INCLUDE_NLOHMANN_JSON_HPP_
 
@@ -19125,6 +19125,7 @@ class serializer
         };
 
         JSON_ASSERT(byte < utf8d.size());
+#pragma warning(disable: 28020)
         const std::uint8_t type = utf8d[byte];
 
         codep = (state != UTF8_ACCEPT)

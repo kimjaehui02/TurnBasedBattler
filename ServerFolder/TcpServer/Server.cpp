@@ -2,7 +2,11 @@
 #include <iostream>  // 콘솔 입출력을 위한 라이브러리
 #include <thread>    // 멀티스레딩 처리를 위한 라이브러리
 #include <winsock2.h>  // Windows 소켓 API를 사용하기 위한 라이브러리
-//#include "json.hpp"
+#pragma warning(disable: 28020)
+// json.hpp가 포함된 코드
+#include "json.hpp"
+#pragma warning(default: 28020) // 다시 경고 활성화
+
 #include "UpdateHandler.h"
 
 
@@ -83,14 +87,14 @@ void Server::acceptConnections() {
 
 
             // 클라이언트가 시작될때 해줄 처리들을 모아놓은것
-            startConnections();
+            //startConnections();
 
 
 
             // 새로운 스레드에서 클라이언트 처리 시작
             {
                 std::lock_guard<std::mutex> lock(mtx); // mtx 잠금을 시작
-                clientThreads.emplace_back(&Server::handleClient, this, clientSocket); // 벡터에 새로운 스레드 추가
+                clientThreads.emplace_back(&Server::RunServerAsync, this, clientSocket); // 벡터에 새로운 스레드 추가
             }
         }
         else {
@@ -100,26 +104,25 @@ void Server::acceptConnections() {
     }
 }
 
-void Server::startConnections()
-{
-    serverState.incrementClientCount();
-    std::cout << "Client connected. Total clients: " << serverState.getClientCount() << std::endl;
-}
+//void Server::startConnections()
+//{
+//    serverState.incrementClientCount();
+//    std::cout << "Client connected. Total clients: " << serverState.getClientCount() << std::endl;
+//}
+
+
+
+
 
 // 클라이언트 처리
-void Server::handleClient(SOCKET clientSocket) {
+void Server::RunServerAsync(SOCKET clientSocket) {
     char buffer[1024];      // 데이터를 저장할 버퍼
     int bytesReceived;      // 수신된 데이터 크기
+
     // 클라이언트로부터 데이터를 지속적으로 수신
-    while ((bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
-
-
-        // 클라이언트가 진행중일때 해줄 처리들을 모아놓은것
-        UpdateHandler handler(clientSocket);
-        handler.processRequest(buffer, bytesReceived);  // 메시지 처리
-
-        //updateClient(buffer, &bytesReceived, &clientSocket);
-
+    while ((bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) 
+    {
+        ReceiveFromTCPClient(clientSocket, buffer, bytesReceived);
     }
 
     // 수신 실패 시 오류 처리
@@ -131,21 +134,38 @@ void Server::handleClient(SOCKET clientSocket) {
     closesocket(clientSocket);
 
     // 클라이언트 수 감소
-    serverState.decrementClientCount();
-    std::cout << "Client disconnected. Total clients: " << serverState.getClientCount() << std::endl;
+    //serverState.decrementClientCount();
+    //std::cout << "Client disconnected. Total clients: " << serverState.getClientCount() << std::endl;
 }
 
 
+void Server::ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesReceived)
+{
+    // 수신한 데이터를 UTF-8 문자열로 변환
+    std::string jsonMessage(buffer, bytesReceived);
 
-//void Server::updateClient(char* buffer, int* bytesReceived, SOCKET* clientSocket)
-//{
-//    // 받은 데이터를 문자열로 변환
-//    std::string receivedMessage(*buffer, *bytesReceived);
-//    std::cout << "Received message: " << receivedMessage << std::endl; // 받은 메시지 출력
-//
-//    // 클라이언트로부터 "RequestInitialData" 메시지가 오면 응답
-//    if (receivedMessage == "RequestInitialData") {
-//        std::string response = "Initial data response from server"; // 응답 메시지
-//        send(*clientSocket, response.c_str(), response.size(), 0);   // 클라이언트로 응답 전송
-//    }
-//}
+    // 디버깅용으로 JSON 출력
+    std::cout << "Received JSON: " << jsonMessage << std::endl;
+
+    // JSON을 객체로 변환
+    try {
+        // JSON 파싱
+        nlohmann::json parsedMessage = nlohmann::json::parse(jsonMessage);
+
+        // connectionState와 data 추출
+        std::string connectionState = parsedMessage["connectionState"];
+        auto data = parsedMessage["data"];
+
+        // 디버깅용으로 데이터 출력
+        std::cout << "Connection State: " << connectionState << std::endl;
+        std::cout << "Data: " << data << std::endl;
+
+        // 필요한 처리를 여기서 계속할 수 있음...
+        // 클라이언트가 진행중일때 해줄 처리들을 모아놓은것
+        UpdateHandler handler(clientSocket);
+        handler.processRequest(buffer, bytesReceived);  // 메시지 처리
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "JSON 파싱 오류: " << ex.what() << std::endl;
+    }
+}

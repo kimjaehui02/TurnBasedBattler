@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{7a31025d-510f-405c-bb73-3dcaf79a2b9e}</ProjectGuid>
-    <RootNamespace>TcpServer</RootNamespace>
+    <RootNamespace>TCPServer </RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>TCPServer</ProjectName>
   </PropertyGroup>

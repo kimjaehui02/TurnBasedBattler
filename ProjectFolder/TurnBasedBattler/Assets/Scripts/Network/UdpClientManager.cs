@@ -35,7 +35,8 @@ public class UdpClientManager : MonoBehaviour
         Connecting,   // 연결 시도 중
         DataSyncing,  // 데이터 동기화 중
         Disconnecting,// 연결 종료 시도 중
-        Error         // 오류 발생
+        Error,        // 오류 발생
+        TcpToUdp      // tcp에서 udp로 이동시킵니다
     }
     #endregion
 
@@ -156,6 +157,7 @@ public class UdpClientManager : MonoBehaviour
         }
     }
 
+
     private void HandleConnecting(dynamic message)
     {
         Debug.Log("Handling Connecting state...");
@@ -184,6 +186,7 @@ public class UdpClientManager : MonoBehaviour
     void Start()
     {
         Application.runInBackground = true;
+
         // 서버와 연결 상태가 아닌 경우에만 새로 연결
         if (udpClient == null || udpClient.Client == null || udpClient.Client.Connected == false)
         {
