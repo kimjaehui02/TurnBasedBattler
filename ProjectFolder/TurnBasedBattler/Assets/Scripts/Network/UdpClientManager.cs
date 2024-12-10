@@ -6,7 +6,8 @@ using System.Text;
 using System;
 using Newtonsoft.Json;
 using System.Collections;
-using UnityEditor.VersionControl;
+using UnityEngine.UIElements;
+//using UnityEditor.VersionControl;
 
 public class UdpClientManager : MonoBehaviour
 {
@@ -16,7 +17,7 @@ public class UdpClientManager : MonoBehaviour
     private UdpClient udpClient;
     public int myId = -1;  // 내 id, 서버에서 받아온 값으로 설정
 
-    private float sendInterval = 0.05f; // 좌표 전송 간격
+    private float sendInterval = 5f; // 좌표 전송 간격
     private float lastSendTime = 0f;
     #endregion
 
@@ -53,8 +54,14 @@ public class UdpClientManager : MonoBehaviour
                 data = messageData
             };
 
+            // 직렬화 시 무한 참조 방지 설정
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+
             // 객체를 JSON 문자열로 직렬화
-            string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented);
+            string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented, settings);
 
             // 디버깅용으로 JSON 출력
             Debug.Log($"보내는 JSON: {jsonMessage}");
@@ -65,7 +72,7 @@ public class UdpClientManager : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogError($"UDP 전송 중 오류 발생: {ex.Message}");
+            Debug.Log($"UDP 전송 중 오류 발생: {ex.Message}");
         }
     }
     #endregion
@@ -107,13 +114,13 @@ public class UdpClientManager : MonoBehaviour
             catch (Exception ex)
             {
                 // JSON 파싱 예외 처리
-                Debug.LogError($"Error parsing JSON: {ex.Message}");
+                Debug.Log($"Error parsing JSON: {ex.Message}");
             }
         }
         catch (Exception ex)
         {
             // 예외 처리: 데이터 수신 중 오류 발생 시
-            Debug.LogError($"Error receiving data: {ex.Message}");
+            Debug.Log($"Error receiving data: {ex.Message}");
         }
 
         
@@ -152,6 +159,8 @@ public class UdpClientManager : MonoBehaviour
     private void HandleConnecting(dynamic message)
     {
         Debug.Log("Handling Connecting state...");
+        myId = message.data.playerId; // message에서 playerId를 추출하여 myId에 할당
+        Debug.Log($"Assigned myId: {myId}");
     }
 
     private void HandleDataSyncing(dynamic message)
@@ -174,13 +183,31 @@ public class UdpClientManager : MonoBehaviour
     // 1. 서버 참여 요청
     void Start()
     {
-        udpClient = new UdpClient(ServerIp, ServerPort);
+        Application.runInBackground = true;
+        // 서버와 연결 상태가 아닌 경우에만 새로 연결
+        if (udpClient == null || udpClient.Client == null || udpClient.Client.Connected == false)
+        {
+            // 기존 클라이언트가 존재하면 종료하고 새로 연결
+            if (udpClient != null)
+            {
+                Quit();
+            }
 
-        // 서버에 연결 요청 보내기
-        SendToUDPServer(ConnectionState.Connecting, new { playerName = "Player1" });
+            udpClient = new UdpClient(ServerIp, ServerPort);
 
-        // 지속적인 통신 시작
-        udpClient.BeginReceive(ReceiveFromUDPServer, null);
+            // 서버에 연결 요청 보내기
+            SendToUDPServer(ConnectionState.Connecting, new { playerName = "Player1" });
+
+            // 지속적인 통신 시작
+            udpClient.BeginReceive(ReceiveFromUDPServer, null);
+
+            Debug.Log("서버에 연결됨.");
+        }
+        else
+        {
+            // 이미 연결된 상태라면 연결 재설정 없이 유지
+            Debug.Log("서버에 이미 연결되어 있음.");
+        }
     }
 
     //// 2. 초당 고정 횟수로 데이터를 주고받기
@@ -196,7 +223,10 @@ public class UdpClientManager : MonoBehaviour
         if (currentTime - lastSendTime >= sendInterval)
         {
             // 데이터 전송 함수 호출
-            SendToUDPServer(ConnectionState.DataSyncing, new { position = myPlayerObject.transform.position });
+            SendToUDPServer(ConnectionState.DataSyncing, new { 
+                positionX = myPlayerObject.transform.position.x,
+                positionY = myPlayerObject.transform.position.y,
+            });
 
             // 마지막 전송 시간 갱신
             lastSendTime = currentTime;
@@ -206,12 +236,28 @@ public class UdpClientManager : MonoBehaviour
     // 3. 종료 통신 (수동 종료 또는 강제 종료 시)
     public void OnApplicationQuit()
     {
-        // 종료 알리기
-        SendToUDPServer(ConnectionState.Disconnecting, new { playerId = myId });
-
-        // UDP 클라이언트 종료
-        udpClient.Close();
-        Debug.Log("Disconnected and closed UDP client.");
+        Quit();
     }
+
+    public void Quit()
+    {
+        try
+        {
+            // 종료 알리기
+            SendToUDPServer(ConnectionState.Disconnecting, new { playerId = myId });
+
+            // UDP 클라이언트 종료
+            if (udpClient != null)
+            {
+                udpClient.Close();
+                Debug.Log("Disconnected and closed UDP client.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.Log("Error during quit: " + ex.Message);
+        }
+    }
+
     #endregion
 }

@@ -4,12 +4,12 @@ using System.Text;
 using System;
 using System.Collections;
 
-public class NetworkManager : MonoBehaviour
+public class TcpClientManager : MonoBehaviour
 {
     #region Singleton Pattern
-    private static NetworkManager _instance;
+    private static TcpClientManager _instance;
 
-    public static NetworkManager Instance => _instance;
+    public static TcpClientManager Instance => _instance;
 
     private void Awake()
     {

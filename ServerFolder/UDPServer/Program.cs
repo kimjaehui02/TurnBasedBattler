@@ -4,7 +4,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 
 class UdpServer
@@ -13,26 +12,31 @@ class UdpServer
     private const int Port = 7777; // 서버 포트
     #endregion
 
-    private static Dictionary<int, Player> players = new Dictionary<int, Player>(); // 플레이어 관리
-    private static Dictionary<int, IPEndPoint> playerEndpoints = new Dictionary<int, IPEndPoint>(); // 플레이어의 IP와 포트 관리
-    private static Queue<int> availablePlayerIds = new Queue<int>(); // 사용되지 않은 플레이어 ID 관리
-    private static int nextPlayerId = 1; // 다음 플레이어 ID
+    #region 유저정보
+    private PlayerManager playerManager = new PlayerManager();
+    #endregion
+
+    #region 게임정보
+    // 게임 관련 정보가 필요한 경우 여기에 추가
+    #endregion
 
     static async Task Main(string[] args)
     {
         Console.WriteLine("UDP 서버 시작...");
-        UdpClient udpServer = new UdpClient(Port);
-        IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+        UdpClient udpServer = new UdpClient(Port); // 서버 포트 지정
+        //IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0); // 클라이언트로부터 오는 모든 데이터를 수신
 
+        // UdpServer 인스턴스 생성
+        UdpServer serverInstance = new UdpServer();
 
         // CancellationTokenSource 생성
         var cancellationTokenSource = new CancellationTokenSource();
         CancellationToken token = cancellationTokenSource.Token;
 
         // 서버 작업 비동기로 실행
-        var serverTask = RunServerAsync(udpServer, remoteEP, token);
+        var serverTask = RunServerAsync(udpServer, token, serverInstance);
 
-        // 취소 요청을 위한 예시
+        // 서버가 종료될 때까지 대기
         Console.WriteLine("서버를 종료하려면 'Enter'를 누르세요.");
         Console.ReadLine();
         cancellationTokenSource.Cancel();
@@ -40,157 +44,6 @@ class UdpServer
         // 서버 작업이 종료될 때까지 기다림
         await serverTask;
         Console.WriteLine("서버가 종료되었습니다.");
-    }
-
-    static async Task RunServerAsync(UdpClient udpServer, IPEndPoint remoteEP, CancellationToken token)
-    {
-        while (!token.IsCancellationRequested)
-        {
-            try
-            {
-                // 데이터 수신
-                byte[] data = await Task.Run(() => udpServer.Receive(ref remoteEP), token);
-                string message = Encoding.UTF8.GetString(data);
-
-                // JSON 데이터를 디시리얼화해서 객체로 변환
-                var clientRequest = JsonConvert.DeserializeObject<ClientRequest>(message); // JsonConvert로 변경
-                Console.WriteLine($"수신: {clientRequest.action} from {remoteEP} (PlayerId: {clientRequest.playerId})");
-                Console.WriteLine("받은 메세지의 내용입니다: " + message);
-
-                // 플레이어 ID를 요청하는 메시지 처리
-                if (clientRequest.action == "GET_ID")
-                {
-                    // 새로운 플레이어에 대해 ID 할당
-                    int newPlayerId = AssignPlayerId(remoteEP);
-
-                    // ID 응답
-                    var response = new ServerResponse
-                    {
-                        command = "Assigned ID",
-                        data = newPlayerId.ToString()
-                    };
-
-                    string responseJson = JsonConvert.SerializeObject(response); // JsonConvert로 변경
-                    byte[] responseData = Encoding.UTF8.GetBytes(responseJson);
-                    udpServer.Send(responseData, responseData.Length, remoteEP);
-                    Console.WriteLine($"응답: {responseJson} to {remoteEP}");
-
-                    // 새로운 플레이어가 추가되었으면, 다른 모든 플레이어에게 현재 상태를 전송
-                    SendPlayerListToAllPlayers(udpServer);
-                }
-                // 플레이어 위치 업데이트 메시지 처리
-                else if (clientRequest.action == "UPDATE_POSITION")
-                {
-                    // 플레이어 위치 갱신
-                    if (clientRequest.playerId.HasValue)  // playerId가 null이 아니면
-                    {
-                        int playerId = clientRequest.playerId.Value;  // playerId를 직접 사용
-                        if (players.ContainsKey(playerId))
-                        {
-                            // x와 y도 null 체크 후 처리
-                            if (clientRequest.x.HasValue && clientRequest.y.HasValue)
-                            {
-                                players[playerId].X = clientRequest.x.Value;
-                                players[playerId].Y = clientRequest.y.Value;
-                            }
-                            else
-                            {
-                                Console.WriteLine("위치 정보가 없습니다.");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("Player not found!");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("playerId가 유효하지 않습니다.");
-                    }
-
-                    // 현재 상태를 모든 클라이언트에게 전송
-                    SendPlayerListToAllPlayers(udpServer);
-                }
-                // 종료 신호 처리
-                else if (clientRequest.action == "SHUTDOWN")
-                {
-                    Console.WriteLine("(clientRequest.action == SHUTDOWN)");
-                    if (clientRequest.playerId.HasValue)
-                    {
-                        Console.WriteLine("(if (clientRequest.playerId.HasValue)");
-                        int playerId = clientRequest.playerId.Value;
-                        if (players.ContainsKey(playerId))
-                        {
-                            // 플레이어 제거
-                            players.Remove(playerId);
-                            playerEndpoints.Remove(playerId);
-                            Console.WriteLine($"플레이어 {playerId} 종료 신호 수신, 제거되었습니다.");
-
-                            // 종료된 클라이언트에게 확인 응답 전송
-                            var response = new ServerResponse
-                            {
-                                command = $"Player {playerId} has been removed."
-                            };
-                            string responseJson = JsonConvert.SerializeObject(response); // JsonConvert로 변경
-                            byte[] responseData = Encoding.UTF8.GetBytes(responseJson);
-                            udpServer.Send(responseData, responseData.Length, remoteEP);
-
-                            // 모든 클라이언트에게 갱신된 플레이어 리스트 전송
-                            SendPlayerListToAllPlayers(udpServer);
-                        }
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"오류 발생: {ex.Message}");
-            }
-        }
-    }
-
-    static int AssignPlayerId(IPEndPoint remoteEP)
-    {
-        int playerId;
-
-        // 사용되지 않는 ID가 있으면 그것을 사용하고, 없으면 새로운 ID를 생성
-        if (availablePlayerIds.Count > 0)
-        {
-            playerId = availablePlayerIds.Dequeue();
-        }
-        else
-        {
-            playerId = nextPlayerId++;
-        }
-
-        players[playerId] = new Player { Id = playerId, X = 0, Y = 0 }; // 초기 위치 0,0
-        playerEndpoints[playerId] = remoteEP; // 클라이언트의 IP와 포트 저장
-        return playerId;
-    }
-
-    static void SendPlayerListToAllPlayers(UdpClient udpServer)
-    {
-        // 모든 플레이어의 위치 리스트를 JSON으로 변환
-        var playerList = new PlayerList();
-        foreach (var player in players.Values)
-        {
-            playerList.players.Add(player);
-        }
-
-        string json = JsonConvert.SerializeObject(playerList); // JsonConvert로 변경
-
-        // 모든 플레이어에게 전송 (자기 자신에게는 전송하지 않음)
-        foreach (var player in playerEndpoints)
-        {
-            // 자기 자신에게 전송하지 않기 위해 player.Key는 playerId
-            IPEndPoint remoteEP = player.Value;
-            byte[] data = Encoding.UTF8.GetBytes(json);
-
-            if (remoteEP.Address.ToString() != "127.0.0.1") // 자기 자신에게 응답을 방지
-            {
-                udpServer.Send(data, data.Length, remoteEP);
-            }
-        }
     }
 
     #region json선언부
@@ -202,10 +55,185 @@ class UdpServer
         Disconnecting,// 연결 종료 시도 중
         Error         // 오류 발생
     }
-
     #endregion
 
+    #region 송신부
+    // 서버에서 클라이언트로 데이터를 송신하는 메서드
+    public void SendToUDPClient(UdpClient udpClient, IPEndPoint remoteEP, ConnectionState connectionState, object messageData)
+    {
+        Console.WriteLine($"SendToUDPClient의 보내는 remoteEP: {remoteEP}");
+
+        try
+        {
+            // 메시지 구성
+            var message = new
+            {
+                connectionState = connectionState.ToString(),
+                data = messageData
+            };
+
+            // 객체를 JSON 문자열로 직렬화
+            string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented);
+
+            // 디버깅용으로 JSON 출력
+            Console.WriteLine($"보내는 JSON: {jsonMessage}");
+
+            // UDP를 통해 클라이언트로 메시지 전송
+            byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
+            udpClient.Send(data, data.Length, remoteEP);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"UDP 전송 중 오류 발생: {ex.Message}");
+        }
+    }
+    #endregion
+
+    #region 수신부
+    // 클라이언트로부터 데이터를 수신하는 메서드
+    public async Task ReceiveFromUDPClient(UdpClient udpServer)
+    {
+        Console.WriteLine($"ReceiveFromUDPClient시작점 : ");
+
+        try
+        {
+            // 데이터 수신
+            UdpReceiveResult result = await udpServer.ReceiveAsync();
+            byte[] data = result.Buffer;  // UdpReceiveResult에서 Buffer 속성으로 데이터 추출
+            IPEndPoint remoteEP = result.RemoteEndPoint;  // 클라이언트의 IP와 포트 번호를 가진 IPEndPoint
+
+            string json = Encoding.UTF8.GetString(data);
+
+            // 수신한 JSON 데이터를 콘솔에 출력
+            Console.WriteLine("Received data: " + json);
+
+            // JSON 문자열을 Newtonsoft.Json으로 처리
+            try
+            {
+                var message = JsonConvert.DeserializeObject<dynamic>(json);
+                Console.WriteLine($"ReceiveFromUDPClient트라이성공 message : {message}");
+
+                if (message != null)
+                {
+                    // 'connectionState'에 따라 처리
+                    HandleConnectionState(udpServer, remoteEP, message);
+                }
+                else
+                {
+                    Console.WriteLine("Failed to parse JSON.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error parsing JSON: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error receiving data: {ex.Message}");
+        }
+        Console.WriteLine($"ReceiveFromUDPClient종료지점 : ");
+    }
+    #endregion
+
+    #region 데이터 처리
+    // 클라이언트에서 보낸 메시지의 connectionState에 따라 처리
+    private void HandleConnectionState(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+    {
+        string connectionState = message.connectionState;
+
+        Console.WriteLine($"HandleConnectionState : {connectionState}");
+        Console.WriteLine($"HandleConnectionState : {connectionState}");
+        Console.WriteLine($"HandleConnectionState : {connectionState}");
+
+        Console.WriteLine($"HandleConnectionState의 보내는 remoteEP: {remoteEP}");
+        switch (connectionState)
+        {
+            case "Connecting":
+                HandleConnecting(udpClient, remoteEP, message);
+                break;
+
+            case "DataSyncing":
+                HandleDataSyncing(udpClient, remoteEP, message);
+                break;
+
+            case "Disconnecting":
+                HandleDisconnecting(udpClient, remoteEP, message);
+                break;
+
+            case "Error":
+                HandleError(udpClient, remoteEP, message);
+                break;
+
+            default:
+                Console.WriteLine($"Unknown connection state: {connectionState}");
+                break;
+        }
+    }
+
+    private void HandleConnecting(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+    {
+        Console.WriteLine("Handling Connecting state...");
+        // 여기에서 플레이어 연결 처리 로직 추가
+        int id = playerManager.AddPlayer(remoteEP);
+        Console.WriteLine($"HandleConnecting의 보내는 remoteEP: {remoteEP}");
+        SendToUDPClient(udpClient, remoteEP, ConnectionState.Connecting, new { playerId = id });
+    }
+
+    private void HandleDataSyncing(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+    {
+        Console.WriteLine("Handling Data Syncing state...");
+        // 데이터 동기화 처리 로직 추가
+    }
+
+    private void HandleDisconnecting(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+    {
+        Console.WriteLine("Handling Disconnecting state...");
+        Console.WriteLine($"message  ...{message}");
+        // 연결 종료 처리 로직 추가
+        // message.data.playerId가 실제로 int로 변환되는지 확인
+        int playerId = Convert.ToInt32(message.data.playerId);  // 강제 형변환
+
+        // 연결 종료 처리 로직
+        playerManager.DeletePlayer(playerId);
+    }
+
+    private void HandleError(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+    {
+        Console.WriteLine("Handling Error state...");
+        // 오류 처리 로직 추가
+    }
+    #endregion
+
+    #region 서버 실행
+
+    // 서버 실행 메서드
+    static async Task RunServerAsync(UdpClient udpServer, CancellationToken token, UdpServer serverInstance)
+    {
+        Console.WriteLine($"1. RunServerAsync시작지점 : ");
+        try
+        {
+            Console.WriteLine($"2. try : ");
+            while (!token.IsCancellationRequested)
+            {
+                Console.WriteLine($"3. while (!token.IsCancellationRequested) : ");
+                // 클라이언트로부터 데이터 수신
+                //UdpReceiveResult receivedResult = await udpServer.ReceiveAsync();
+
+                // 수신한 데이터 출력
+                //string receivedMessage = Encoding.UTF8.GetString(receivedResult.Buffer);
 
 
+                // 수신한 데이터를 세부적으로 처리
+                await serverInstance.ReceiveFromUDPClient(udpServer);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"서버 오류 발생: {ex.Message}");
+        }
+        Console.WriteLine($"4. RunServerAsync종료지점 : ");
+    }
 
+    #endregion
 }
