@@ -29,7 +29,8 @@ Server::~Server() {
 }
 
 // Server 시작
-void Server::start() {
+void Server::start() 
+{
     // 서버 소켓 생성: IPv4(AF_INET), TCP(SOCK_STREAM) 사용
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket == INVALID_SOCKET) { // 소켓 생성 실패 시 오류 메시지 출력
@@ -85,7 +86,7 @@ void Server::acceptConnections() {
         SOCKET clientSocket = accept(serverSocket, NULL, NULL);
         if (clientSocket != INVALID_SOCKET) { // 연결 성공 시
 
-
+            std::cerr << "새 소켓의 접근 감지: " << std::endl;
             // 클라이언트가 시작될때 해줄 처리들을 모아놓은것
             //startConnections();
 
@@ -139,6 +140,8 @@ void Server::RunServerAsync(SOCKET clientSocket) {
 }
 
 
+
+
 void Server::ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesReceived)
 {
     // 수신한 데이터를 UTF-8 문자열로 변환
@@ -148,7 +151,8 @@ void Server::ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesRe
     std::cout << "Received JSON: " << jsonMessage << std::endl;
 
     // JSON을 객체로 변환
-    try {
+    try 
+    {
         // JSON 파싱
         nlohmann::json parsedMessage = nlohmann::json::parse(jsonMessage);
 
@@ -163,9 +167,53 @@ void Server::ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesRe
         // 필요한 처리를 여기서 계속할 수 있음...
         // 클라이언트가 진행중일때 해줄 처리들을 모아놓은것
         UpdateHandler handler(clientSocket);
-        handler.processRequest(buffer, bytesReceived);  // 메시지 처리
+        handler.HandleConnectionState(buffer, bytesReceived);  // 메시지 처리
     }
-    catch (const std::exception& ex) {
+    catch (const std::exception& ex) 
+    {
         std::cerr << "JSON 파싱 오류: " << ex.what() << std::endl;
     }
+}
+
+void Server::SendToTCPClient(SOCKET clientSocket, ConnectionState connectionState, const std::string& messageData)
+{
+    // 연결 상태를 문자열로 변환 (ConnectionState를 문자열로 변환)
+    std::string connectionStateStr;
+    switch (connectionState) 
+    {
+    case ConnectionState::Default: connectionStateStr = "Default"; break;
+    case ConnectionState::Connecting: connectionStateStr = "Connecting"; break;
+    case ConnectionState::DataSyncing: connectionStateStr = "DataSyncing"; break;
+    case ConnectionState::Disconnecting: connectionStateStr = "Disconnecting"; break;
+    case ConnectionState::Error: connectionStateStr = "Error"; break;
+    case ConnectionState::TcpToUdp: connectionStateStr = "TcpToUdp"; break;
+    default: connectionStateStr = "Unknown"; break;
+    }
+
+    // 보낼 데이터 객체 만들기 (JSON)
+    nlohmann::json message;
+    message["connectionState"] = connectionStateStr;
+    message["data"] = "Your message here";  // 여기에 필요한 데이터를 추가
+
+    // JSON을 문자열로 변환
+    std::string jsonMessage = message.dump(); // JSON 문자열
+
+    // 문자열을 버퍼에 복사
+    int messageLength = jsonMessage.length();
+    char* sendBuffer = new char[messageLength + 1]; // 메시지 길이 + null 종료 문자
+    strcpy_s(sendBuffer, messageLength + 1, jsonMessage.c_str());
+
+    // 클라이언트로 데이터 전송
+    int bytesSent = send(clientSocket, sendBuffer, messageLength, 0);
+    if (bytesSent == SOCKET_ERROR) 
+    {
+        std::cerr << "Send failed. Error: " << WSAGetLastError() << std::endl;
+    }
+    else 
+    {
+        std::cout << "Message sent to client: " << jsonMessage << std::endl;
+    }
+
+    // 동적으로 할당된 메모리 해제
+    delete[] sendBuffer;
 }

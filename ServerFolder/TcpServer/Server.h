@@ -8,6 +8,7 @@
 #include <atomic>
 #include <winsock2.h>
 #include "ServerState.h"  // ServerState 클래스 포함
+#include "ConnectionState.h"
 
 class Server {
 public:
@@ -26,14 +27,16 @@ private:
     void RunServerAsync(SOCKET clientSocket);
 
     // 클라이언트간의 교류
-    void SendToTCPClient();
+    void SendToTCPClient(SOCKET clientSocket, ConnectionState connectionState, const std::string& messageData);
     void ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesReceived);
 
     // UDP서버간의 교류
-    void SendToUDPServer();
-    void ReceiveFromUDPServer();
+    //void SendToUDPServer();
+    //void ReceiveFromUDPServer();
 
-    void HandleConnectionState();
+    //void HandleConnectionState();
+
+
 
     int port;  // 서버 포트
     SOCKET serverSocket;  // 서버 소켓

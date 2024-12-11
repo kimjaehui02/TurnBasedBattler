@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ConnectionState.h" />
     <ClInclude Include="UpdateHandler.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="Server.h" />

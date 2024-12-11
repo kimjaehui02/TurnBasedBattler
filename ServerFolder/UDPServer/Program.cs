@@ -5,9 +5,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-
+//using System.Net.Sockets;
 class UdpServer
 {
+    private const string ServerIp = "127.0.0.1";  // 서버 IP
+    private const int ServerPort = 8080;  // 서버 포트
+    private static TcpClient _client;
+    private static NetworkStream _stream;
     #region 통신용 변수들
     private const int Port = 7777; // 서버 포트
     #endregion
@@ -23,7 +27,28 @@ class UdpServer
     static async Task Main(string[] args)
     {
         Console.WriteLine("UDP 서버 시작...");
+
         UdpClient udpServer = new UdpClient(Port); // 서버 포트 지정
+
+        try
+        {
+            // TcpClient 연결 시도
+            _client = new TcpClient(ServerIp, ServerPort);
+            _stream = _client.GetStream();
+            Console.WriteLine("서버에 연결되었습니다.");
+
+            // 여기서부터 서버와의 통신을 계속 진행
+            SendToTcpServer(ConnectionState.TcpToUdp, "udp");
+        }
+        catch (Exception ex)
+        {
+            // 연결 실패 시 오류 메시지 출력
+            Console.WriteLine($"연결 실패: {ex.Message}");
+
+            // Main 메서드를 종료하여 프로그램을 종료
+            return;
+        }
+
         //IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0); // 클라이언트로부터 오는 모든 데이터를 수신
 
         // UdpServer 인스턴스 생성
@@ -56,6 +81,152 @@ class UdpServer
         Error,        // 오류 발생
         TcpToUdp      // tcp에서 udp로 이동시킵니다
     }
+    #endregion
+
+    #region tcp송수신
+
+
+    #region tcp송신함수
+    static void SendToTcpServer(ConnectionState connectionState, object messageData)
+    {
+        try
+        {
+            // 메시지 구성
+            var message = new
+            {
+                connectionState = connectionState.ToString(), // Enum 값을 문자열로 변환
+                data = messageData
+            };
+
+            // 직렬화 시 무한 참조 방지 설정
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+
+            // 객체를 JSON 문자열로 직렬화
+            string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented, settings);
+
+            // 디버깅용으로 JSON 출력
+            /*Console.WriteLine($"보내는 JSON: {jsonMessage}");*/
+
+            // TCP를 통해 서버로 메시지 전송
+            byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
+            _stream.Write(data, 0, data.Length);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"TCP 전송 중 오류 발생: {ex.Message}");
+        }
+    }
+    #endregion
+
+    #region tcp수신함수
+    public async Task ReceiveFromTCPServerAsync()
+    {
+        try
+        {
+            byte[] buffer = new byte[1024];
+            while (_client.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
+            {
+                try
+                {
+                    int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length); // 비동기적으로 데이터 수신
+
+                    if (bytesRead > 0)
+                    {
+                        byte[] data = new byte[bytesRead];
+                        Array.Copy(buffer, 0, data, 0, bytesRead);
+
+                        // 받은 데이터를 UTF-8 문자열로 변환
+                        string json = Encoding.UTF8.GetString(data);
+
+                        // JSON 처리
+                        try
+                        {
+                            var message = JsonConvert.DeserializeObject<dynamic>(json);
+                            if (message != null)
+                            {
+                                HandleConnectionState(message);  // 상태 처리
+                            }
+                            else
+                            {
+                                Console.WriteLine("Failed to parse JSON.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error parsing JSON: {ex.Message}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading data: {ex.Message}");
+                    break; // 오류 발생 시 연결 종료
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error receiving data: {ex.Message}");
+        }
+    }
+
+
+    private void HandleConnectionState(dynamic message)
+    {
+        string connectionState = message.connectionState;
+
+        switch (connectionState)
+        {
+            case "Connecting":
+                HandleConnecting(message);
+                break;
+
+            case "DataSyncing":
+                HandleDataSyncing(message);
+                break;
+
+            case "Disconnecting":
+                HandleDisconnecting(message);
+                break;
+
+            case "Error":
+                HandleError(message);
+                break;
+
+            default:
+                Console.WriteLine($"Unknown connection state: {connectionState}");
+                break;
+        }
+    }
+
+
+    private void HandleConnecting(dynamic message)
+    {
+        Console.WriteLine("Handling Connecting state...");
+
+    }
+
+    private void HandleDataSyncing(dynamic message)
+    {
+        Console.WriteLine("Handling Data Syncing state...");
+    }
+
+    private void HandleDisconnecting(dynamic message)
+    {
+        Console.WriteLine("Handling Disconnecting state...");
+    }
+
+    private void HandleError(dynamic message)
+    {
+        Console.WriteLine("Handling Error state...");
+    }
+
+    #endregion
+
+
     #endregion
 
     #region 송신부

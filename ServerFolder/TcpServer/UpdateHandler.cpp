@@ -1,42 +1,90 @@
 #include "UpdateHandler.h"
 #include "json.hpp"
+
 using json = nlohmann::json;
 
 UpdateHandler::UpdateHandler(SOCKET clientSocket) : clientSocket(clientSocket) {}
 
-void UpdateHandler::processRequest(char* buffer, int bytesReceived) {
+void UpdateHandler::HandleConnectionState(char* buffer, int bytesReceived) 
+{
     // 받은 데이터를 문자열로 변환
-    std::string receivedMessage(buffer, bytesReceived);
-    std::cout << "Received message: " << receivedMessage << std::endl;
+    std::string jsonMessage(buffer, bytesReceived);
+    std::cout << "Received message: " << jsonMessage << std::endl;
 
     try {
-        // 문자열을 JSON으로 파싱
-        json receivedJson = json::parse(receivedMessage);
+        // JSON 파싱
+        json parsedMessage = json::parse(jsonMessage); // 여기서 예외 발생 가능
 
-        // 명령어(command) 추출
-        std::string command = receivedJson["command"];
+        // connectionState 추출 (키가 존재하는지 확인)
+        if (parsedMessage.contains("connectionState")) 
+        {
+            std::string connectionState = parsedMessage["connectionState"];
 
-        // "PING" 명령에 응답
-        if (command == "PING") {
-            json response;
-            response["command"] = "PONG";  // 응답 명령어
-            sendResponse(response.dump()); // JSON을 문자열로 직렬화하여 응답 전송
+            if (connectionState == "Connecting") 
+            {
+                HandleConnecting(parsedMessage);
+            }
+            else if (connectionState == "DataSyncing") 
+            {
+                HandleDataSyncing(parsedMessage);
+            }
+            else if (connectionState == "Disconnecting") 
+            {
+                HandleDisconnecting(parsedMessage);
+            }
+            else if (connectionState == "Error")
+            {
+                HandleError(parsedMessage);
+            }
+            else if (connectionState == "TcpToUdp")
+            {
+                HandleTcpToUdp(parsedMessage);
+            }
+            else 
+            {
+                std::cerr << "Unknown connection state: " << connectionState << std::endl;
+            }
         }
-        // "RequestInitialData" 명령에 응답
-        else if (command == "RequestInitialData") {
-            handleInitialDataRequest();
-        }
-        // 그 외의 경우
-        else {
-            json response;
-            response["command"] = "UNKNOWN";
-            response["message"] = "Unknown command";
-            sendResponse(response.dump());
+        else 
+        {
+            std::cerr << "connectionState not found in the message" << std::endl;
         }
     }
-    catch (const std::exception& e) {
-        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+    // JSON 파싱에서 발생한 예외를 잡기
+    catch (const nlohmann::json::parse_error& e) 
+    {
+        std::cerr << "JSON parsing error: " << e.what() << std::endl;
     }
+    // 그 외의 예외를 잡기
+    catch (const std::exception& e) 
+    {
+        std::cerr << "General error: " << e.what() << std::endl;
+    }
+}
+
+void UpdateHandler::HandleConnecting(const json& message) {
+    std::cout << "Handling Connecting state with message: " << message.dump() << std::endl;
+    // 추가 처리 로직...
+}
+
+void UpdateHandler::HandleDataSyncing(const json& message) {
+    std::cout << "Handling DataSyncing state with message: " << message.dump() << std::endl;
+    // 추가 처리 로직...
+}
+
+void UpdateHandler::HandleDisconnecting(const json& message) {
+    std::cout << "Handling Disconnecting state with message: " << message.dump() << std::endl;
+    // 추가 처리 로직...
+}
+
+void UpdateHandler::HandleError(const json& message) {
+    std::cerr << "Handling Error state with message: " << message.dump() << std::endl;
+    // 추가 처리 로직...
+}
+
+void UpdateHandler::HandleTcpToUdp(const json& message) {
+    std::cerr << "Handling TcpToUdp state with message: " << message.dump() << std::endl;
+    // 추가 처리 로직...
 }
 
 void UpdateHandler::handleInitialDataRequest() {
