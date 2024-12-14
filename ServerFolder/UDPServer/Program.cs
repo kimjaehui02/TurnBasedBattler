@@ -6,18 +6,30 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 //using System.Net.Sockets;
+
+// 또하나의 송수신 철칙
+
+// 1. RunServerAsync
+// 2. Receive
+// 3. Handle
+
+// 수신은 3단계로 나누어지고
+// 1단계는 2단계를 반복만
+// 2단계는 3단계로 실행만
+// 3단계는 데이터를 받아서 경우에따라 함수로 분배
+
 class UdpServer
 {
     private const string ServerIp = "127.0.0.1";  // 서버 IP
     private const int ServerPort = 8080;  // 서버 포트
-    private static TcpClient _client;
-    private static NetworkStream _stream;
+
+
     #region 통신용 변수들
-    private const int Port = 7777; // 서버 포트
+    private const int Port = 9090; // 서버 포트
     #endregion
 
     #region 유저정보
-    private PlayerManager playerManager = new PlayerManager();
+    
     #endregion
 
     #region 게임정보
@@ -27,39 +39,30 @@ class UdpServer
     static async Task Main(string[] args)
     {
         Console.WriteLine("UDP 서버 시작...");
+        PlayerManager playerManager = new PlayerManager();
+        UDPServer.TcpConnection tcpConnection = new UDPServer.TcpConnection();
+        UDPServer.UdpConnection udpConnection = new UDPServer.UdpConnection(playerManager);
+
+
 
         UdpClient udpServer = new UdpClient(Port); // 서버 포트 지정
 
-        try
-        {
-            // TcpClient 연결 시도
-            _client = new TcpClient(ServerIp, ServerPort);
-            _stream = _client.GetStream();
-            Console.WriteLine("서버에 연결되었습니다.");
 
-            // 여기서부터 서버와의 통신을 계속 진행
-            SendToTcpServer(ConnectionState.TcpToUdp, "udp");
-        }
-        catch (Exception ex)
-        {
-            // 연결 실패 시 오류 메시지 출력
-            Console.WriteLine($"연결 실패: {ex.Message}");
-
-            // Main 메서드를 종료하여 프로그램을 종료
-            return;
-        }
 
         //IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0); // 클라이언트로부터 오는 모든 데이터를 수신
 
         // UdpServer 인스턴스 생성
-        UdpServer serverInstance = new UdpServer();
+        // UdpServer serverInstance = new UdpServer();
 
+        #region udp연결구현
         // CancellationTokenSource 생성
         var cancellationTokenSource = new CancellationTokenSource();
         CancellationToken token = cancellationTokenSource.Token;
 
         // 서버 작업 비동기로 실행
-        var serverTask = RunServerAsync(udpServer, token, serverInstance);
+        var serverTask = udpConnection.RunServerAsync(udpServer, token);
+
+        #endregion
 
         // 서버가 종료될 때까지 대기
         Console.WriteLine("서버를 종료하려면 'Enter'를 누르세요.");
@@ -71,341 +74,5 @@ class UdpServer
         Console.WriteLine("서버가 종료되었습니다.");
     }
 
-    #region json선언부
-    public enum ConnectionState
-    {
-        Default,      // 기본 상태
-        Connecting,   // 연결 시도 중
-        DataSyncing,  // 데이터 동기화 중
-        Disconnecting,// 연결 종료 시도 중
-        Error,        // 오류 발생
-        TcpToUdp      // tcp에서 udp로 이동시킵니다
-    }
-    #endregion
 
-    #region tcp송수신
-
-
-    #region tcp송신함수
-    static void SendToTcpServer(ConnectionState connectionState, object messageData)
-    {
-        try
-        {
-            // 메시지 구성
-            var message = new
-            {
-                connectionState = connectionState.ToString(), // Enum 값을 문자열로 변환
-                data = messageData
-            };
-
-            // 직렬화 시 무한 참조 방지 설정
-            var settings = new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            };
-
-            // 객체를 JSON 문자열로 직렬화
-            string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented, settings);
-
-            // 디버깅용으로 JSON 출력
-            /*Console.WriteLine($"보내는 JSON: {jsonMessage}");*/
-
-            // TCP를 통해 서버로 메시지 전송
-            byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
-            _stream.Write(data, 0, data.Length);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"TCP 전송 중 오류 발생: {ex.Message}");
-        }
-    }
-    #endregion
-
-    #region tcp수신함수
-    public async Task ReceiveFromTCPServerAsync()
-    {
-        try
-        {
-            byte[] buffer = new byte[1024];
-            while (_client.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
-            {
-                try
-                {
-                    int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length); // 비동기적으로 데이터 수신
-
-                    if (bytesRead > 0)
-                    {
-                        byte[] data = new byte[bytesRead];
-                        Array.Copy(buffer, 0, data, 0, bytesRead);
-
-                        // 받은 데이터를 UTF-8 문자열로 변환
-                        string json = Encoding.UTF8.GetString(data);
-
-                        // JSON 처리
-                        try
-                        {
-                            var message = JsonConvert.DeserializeObject<dynamic>(json);
-                            if (message != null)
-                            {
-                                HandleConnectionState(message);  // 상태 처리
-                            }
-                            else
-                            {
-                                Console.WriteLine("Failed to parse JSON.");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error parsing JSON: {ex.Message}");
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error reading data: {ex.Message}");
-                    break; // 오류 발생 시 연결 종료
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error receiving data: {ex.Message}");
-        }
-    }
-
-
-    private void HandleConnectionState(dynamic message)
-    {
-        string connectionState = message.connectionState;
-
-        switch (connectionState)
-        {
-            case "Connecting":
-                HandleConnecting(message);
-                break;
-
-            case "DataSyncing":
-                HandleDataSyncing(message);
-                break;
-
-            case "Disconnecting":
-                HandleDisconnecting(message);
-                break;
-
-            case "Error":
-                HandleError(message);
-                break;
-
-            default:
-                Console.WriteLine($"Unknown connection state: {connectionState}");
-                break;
-        }
-    }
-
-
-    private void HandleConnecting(dynamic message)
-    {
-        Console.WriteLine("Handling Connecting state...");
-
-    }
-
-    private void HandleDataSyncing(dynamic message)
-    {
-        Console.WriteLine("Handling Data Syncing state...");
-    }
-
-    private void HandleDisconnecting(dynamic message)
-    {
-        Console.WriteLine("Handling Disconnecting state...");
-    }
-
-    private void HandleError(dynamic message)
-    {
-        Console.WriteLine("Handling Error state...");
-    }
-
-    #endregion
-
-
-    #endregion
-
-    #region 송신부
-    // 서버에서 클라이언트로 데이터를 송신하는 메서드
-    public void SendToUDPClient(UdpClient udpClient, IPEndPoint remoteEP, ConnectionState connectionState, object messageData)
-    {
-        Console.WriteLine($"SendToUDPClient의 보내는 remoteEP: {remoteEP}");
-
-        try
-        {
-            // 메시지 구성
-            var message = new
-            {
-                connectionState = connectionState.ToString(),
-                data = messageData
-            };
-
-            // 객체를 JSON 문자열로 직렬화
-            string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented);
-
-            // 디버깅용으로 JSON 출력
-            Console.WriteLine($"보내는 JSON: {jsonMessage}");
-
-            // UDP를 통해 클라이언트로 메시지 전송
-            byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
-            udpClient.Send(data, data.Length, remoteEP);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"UDP 전송 중 오류 발생: {ex.Message}");
-        }
-    }
-    #endregion
-
-    #region 수신부
-    // 클라이언트로부터 데이터를 수신하는 메서드
-    public async Task ReceiveFromUDPClient(UdpClient udpServer)
-    {
-        Console.WriteLine($"ReceiveFromUDPClient시작점 : ");
-
-        try
-        {
-            // 데이터 수신
-            UdpReceiveResult result = await udpServer.ReceiveAsync();
-            byte[] data = result.Buffer;  // UdpReceiveResult에서 Buffer 속성으로 데이터 추출
-            IPEndPoint remoteEP = result.RemoteEndPoint;  // 클라이언트의 IP와 포트 번호를 가진 IPEndPoint
-
-            string json = Encoding.UTF8.GetString(data);
-
-            // 수신한 JSON 데이터를 콘솔에 출력
-            Console.WriteLine("Received data: " + json);
-
-            // JSON 문자열을 Newtonsoft.Json으로 처리
-            try
-            {
-                var message = JsonConvert.DeserializeObject<dynamic>(json);
-                Console.WriteLine($"ReceiveFromUDPClient트라이성공 message : {message}");
-
-                if (message != null)
-                {
-                    // 'connectionState'에 따라 처리
-                    HandleConnectionState(udpServer, remoteEP, message);
-                }
-                else
-                {
-                    Console.WriteLine("Failed to parse JSON.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error parsing JSON: {ex.Message}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error receiving data: {ex.Message}");
-        }
-        Console.WriteLine($"ReceiveFromUDPClient종료지점 : ");
-    }
-    #endregion
-
-    #region 데이터 처리
-    // 클라이언트에서 보낸 메시지의 connectionState에 따라 처리
-    private void HandleConnectionState(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
-    {
-        string connectionState = message.connectionState;
-
-        Console.WriteLine($"HandleConnectionState : {connectionState}");
-        Console.WriteLine($"HandleConnectionState : {connectionState}");
-        Console.WriteLine($"HandleConnectionState : {connectionState}");
-
-        Console.WriteLine($"HandleConnectionState의 보내는 remoteEP: {remoteEP}");
-        switch (connectionState)
-        {
-            case "Connecting":
-                HandleConnecting(udpClient, remoteEP, message);
-                break;
-
-            case "DataSyncing":
-                HandleDataSyncing(udpClient, remoteEP, message);
-                break;
-
-            case "Disconnecting":
-                HandleDisconnecting(udpClient, remoteEP, message);
-                break;
-
-            case "Error":
-                HandleError(udpClient, remoteEP, message);
-                break;
-
-            default:
-                Console.WriteLine($"Unknown connection state: {connectionState}");
-                break;
-        }
-    }
-
-    private void HandleConnecting(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
-    {
-        Console.WriteLine("Handling Connecting state...");
-        // 여기에서 플레이어 연결 처리 로직 추가
-        int id = playerManager.AddPlayer(remoteEP);
-        Console.WriteLine($"HandleConnecting의 보내는 remoteEP: {remoteEP}");
-        SendToUDPClient(udpClient, remoteEP, ConnectionState.Connecting, new { playerId = id });
-    }
-
-    private void HandleDataSyncing(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
-    {
-        Console.WriteLine("Handling Data Syncing state...");
-        // 데이터 동기화 처리 로직 추가
-    }
-
-    private void HandleDisconnecting(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
-    {
-        Console.WriteLine("Handling Disconnecting state...");
-        Console.WriteLine($"message  ...{message}");
-        // 연결 종료 처리 로직 추가
-        // message.data.playerId가 실제로 int로 변환되는지 확인
-        int playerId = Convert.ToInt32(message.data.playerId);  // 강제 형변환
-
-        // 연결 종료 처리 로직
-        playerManager.DeletePlayer(playerId);
-    }
-
-    private void HandleError(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
-    {
-        Console.WriteLine("Handling Error state...");
-        // 오류 처리 로직 추가
-    }
-    #endregion
-
-    #region 서버 실행
-
-    // 서버 실행 메서드
-    static async Task RunServerAsync(UdpClient udpServer, CancellationToken token, UdpServer serverInstance)
-    {
-        Console.WriteLine($"1. RunServerAsync시작지점 : ");
-        try
-        {
-            Console.WriteLine($"2. try : ");
-            while (!token.IsCancellationRequested)
-            {
-                Console.WriteLine($"3. while (!token.IsCancellationRequested) : ");
-                // 클라이언트로부터 데이터 수신
-                //UdpReceiveResult receivedResult = await udpServer.ReceiveAsync();
-
-                // 수신한 데이터 출력
-                //string receivedMessage = Encoding.UTF8.GetString(receivedResult.Buffer);
-
-
-                // 수신한 데이터를 세부적으로 처리
-                await serverInstance.ReceiveFromUDPClient(udpServer);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"서버 오류 발생: {ex.Message}");
-        }
-        Console.WriteLine($"4. RunServerAsync종료지점 : ");
-    }
-
-    #endregion
 }
