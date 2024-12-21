@@ -142,16 +142,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ConnectionState.h" />
+    <ClInclude Include="SubServer.h" />
     <ClInclude Include="UpdateHandler.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="Server.h" />
-    <ClInclude Include="ServerState.h" />
+    <ClInclude Include="SubServerManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="SubServer.cpp" />
     <ClCompile Include="UpdateHandler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Server.cpp" />
-    <ClCompile Include="ServerState.cpp" />
+    <ClCompile Include="SubServerManager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -7,8 +7,10 @@
 #include <mutex>
 #include <atomic>
 #include <winsock2.h>
-#include "ServerState.h"  // ServerState 클래스 포함
+#include "SubServer.h"  // ServerState 클래스 포함
 #include "ConnectionState.h"
+#include "SubServerManager.h"
+#include "SubServer.h"
 
 class Server {
 public:
@@ -43,7 +45,10 @@ private:
     std::atomic<bool> running;  // 서버 실행 여부
     std::vector<std::thread> clientThreads;  // 클라이언트 핸들링 스레드들
     std::mutex mtx;  // 멀티스레드 안전을 위한 뮤텍스
-    ServerState serverState;  // ServerState 인스턴스
+    //SubServerManager serverState;  // ServerState 인스턴스
+
+    // c#서브 서버들을 관리할 리스트
+
 };
 
 #endif

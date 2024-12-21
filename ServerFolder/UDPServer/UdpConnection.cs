@@ -179,13 +179,13 @@ namespace UDPServer
         #region 서버 실행
 
         // 서버 실행 메서드
-        public async Task RunServerAsync(UdpClient udpServer, CancellationToken token)
+        public async Task RunServerAsync(UdpClient udpServer)
         {
             Console.WriteLine($"1. RunServerAsync시작지점 : ");
             try
             {
                 Console.WriteLine($"2. try : ");
-                while (!token.IsCancellationRequested)
+                while (true)
                 {
                     Console.WriteLine($"3. while (!token.IsCancellationRequested) : ");
                     // 클라이언트로부터 데이터 수신
@@ -208,6 +208,16 @@ namespace UDPServer
 
         #endregion
 
+        #region 통신 시작
 
+        public async Task StartConnection(string ServerIp, int ServerPort, int port)
+        {
+            UdpClient udpServer = new UdpClient(port); // 서버 포트 지정
+            Console.WriteLine("UdpClient udpServer = new UdpClient(Port); // 서버 포트 지정");
+
+            await RunServerAsync(udpServer);
+        }
+
+        #endregion 통신 시작 끝
     }
 }

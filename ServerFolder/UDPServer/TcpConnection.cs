@@ -14,15 +14,15 @@ namespace UDPServer
         #region 변수들
 
         #region 메인서버의 정보들
-        private const string ServerIp = "127.0.0.1";  // 서버 IP
-        private const int ServerPort = 8080;  // 서버 포트
+        // private const string ServerIp = "127.0.0.1";  // 서버 IP
+        // private const int ServerPort = 8080;  // 서버 포트
         private static NetworkStream _stream;
         private static TcpClient _client;
         #endregion
 
         #region 이 서버의 클라이언트들
-        private const string ServerIpMine = "127.0.0.1";  // 서버 IP
-        private const int ServerPortMine = 9090;  // 서버 포트
+        // private const string ServerIpMine = "127.0.0.1";  // 서버 IP
+        // private const int ServerPortMine = 9090;  // 서버 포트
         private List<TcpClient> clients = new List<TcpClient>();
         //private static TcpClient _clientMine;
         private TcpListener _listener;
@@ -89,11 +89,13 @@ namespace UDPServer
         // 1. 런
         public async Task RunServerAsync()
         {
+            Console.WriteLine("public async Task RunServerAsync()");
             try
             {
                 // 클라이언트가 연결되어 있을 때만 계속 데이터 수신
                 while (_client?.Connected ?? false)
                 {
+                    Console.WriteLine("while (_client?.Connected ?? false)");
                     // 데이터를 비동기적으로 수신
                     await ReceiveFromTCPServerAsync();
                 }
@@ -102,6 +104,7 @@ namespace UDPServer
             {
                 Console.WriteLine($"서버 실행 중 오류 발생: {ex.Message}");
             }
+            Console.WriteLine("public async Task RunServerAsync() END");
         }
 
         // 2. 리시브
@@ -114,11 +117,12 @@ namespace UDPServer
             Console.WriteLine("ReceiveFromTCPServerAsync()");
 
             byte[] buffer = new byte[1024];
-
+            Console.WriteLine("byte[] buffer = new byte[1024];");
             try
             {
+                Console.WriteLine("try");
                 int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length); // 비동기적으로 데이터 수신
-
+                Console.WriteLine("int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length); // 비동기적으로 데이터 수신");
                 if (bytesRead > 0)
                 {
                     byte[] data = new byte[bytesRead];
@@ -156,6 +160,7 @@ namespace UDPServer
 
         // 3. 분배
         #region 분배들
+
         private void HandleConnectionState(dynamic message)
         {
             string connectionState = message.connectionState;
@@ -184,7 +189,6 @@ namespace UDPServer
             }
         }
 
-
         private void HandleConnecting(dynamic message)
         {
             Console.WriteLine("Handling Connecting state...");
@@ -212,23 +216,41 @@ namespace UDPServer
 
         #region 클라와의 tcp연결함수
 
-        // 0. 런 올 클라이언트
-        public async Task RunServerAsyncToAllClient()
+        // 0. 런 에드 클라이언트
+
+        /// <summary>
+        /// 리스너의 신호를 받아서 1대1로 대응되는 비동기를 만들어줌
+        /// </summary>
+        /// <returns></returns>
+        public async Task RunServerAsyncToAddClient()
         {
-            List<Task> clientTasks = new List<Task>();
-
-            // 여러 클라이언트 연결을 처리
-            foreach (var client in clients)
+            Console.WriteLine("public async Task RunServerAsyncToAddClient()");
+            Console.WriteLine($"RunServerAsyncToAddClient");
+            try
             {
-                // 각 클라이언트에 대해 비동기적으로 데이터 수신
-                clientTasks.Add(RunServerAsyncToClient(client));
+                while (_listener.Server.IsBound)  // 서버가 꺼지지 않은 이상 계속 반복
+                {
+                    TcpClient client = _listener.AcceptTcpClient(); // 연결이 올 때까지 멈춘 상태
+                    Console.WriteLine($"TcpClient client = _listener.AcceptTcpClient(); // 연결이 올 때까지 멈춘 상태");
+                    await RunServerAsyncToClient(client);
+                }
+                
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생: {ex.Message}");
+            }
+            
 
-            // 모든 클라이언트의 작업을 동시에 처리
-            await Task.WhenAll(clientTasks);
         }
 
         // 1. 런
+        
+        /// <summary>
+        /// 클라이언트와 1대1이 되는 비동기
+        /// </summary>
+        /// <param name="asyncToClient">대응시킬 클라이언트를 매개변수로</param>
+        /// <returns></returns>
         public async Task RunServerAsyncToClient(TcpClient asyncToClient)
         {
             try
@@ -240,11 +262,17 @@ namespace UDPServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"클라이언트 연결 대기 중 오류 발생: {ex.Message}");
+                Console.WriteLine($"1. 런 중 오류 발생: {ex.Message}");
             }
         }
 
         // 2. 리시브
+
+        /// <summary>
+        /// 클라이언트의 송신 한번마다 실행되는 비동기
+        /// </summary>
+        /// <param name="asyncToClient">신호를 받을 클라이언트</param>
+        /// <returns></returns>
         public async Task ReceiveFromClientAsync(TcpClient asyncToClient)
         {
             Console.WriteLine("ReceiveFromTCPServerAsync()");
@@ -350,7 +378,7 @@ namespace UDPServer
         {
             Console.WriteLine("Handling Error state...");
         }
-        #endregion
+        #endregion 분배들 끝
 
 
         #endregion 클라와의 tcp연결함수 끝
@@ -359,25 +387,35 @@ namespace UDPServer
 
         #region 통신 시작
 
-        public async Task StartConnection()
+        public async Task StartConnection(string ServerIp, int ServerPort, int tcpPort, int udpPort)
         {
+
             // 메인서버와 연결하는 부분들
             try
             {
+
                 // TCP 클라이언트 연결
                 _client = new TcpClient(ServerIp, ServerPort);
                 _stream = _client.GetStream();
 
+
                 // tcp서버 연결
-                _listener = new TcpListener(IPAddress.Parse(ServerIp), ServerPortMine);
+                _listener = new TcpListener(IPAddress.Parse(ServerIp), tcpPort);
+                _listener.Start();
 
                 // 서버와 연결 후 초기화 작업
-                SendToTcpServer(ConnectionState.Connecting, new { playerName = "Player1" });
+                SendToTcpServer(ConnectionState.Connecting, new { playerName = "udpServer", ServerIp, tcpPort, udpPort });
 
                 // TCP 데이터 수신 시작
-                await RunServerAsync();
+                // 두 비동기 함수 동시에 실행
+                var runServerAsyncTask = RunServerAsync();  // 비동기 실행 준비
+                var runServerAsyncToAddClientTask = RunServerAsyncToAddClient();  // 비동기 실행 준비
 
+                Console.WriteLine("두 함수가 동시에 실행됨!");
+                // 두 비동기 함수 모두 완료될 때까지 기다림
+                await Task.WhenAll(runServerAsyncTask, runServerAsyncToAddClientTask);
 
+                Console.WriteLine("두 함수가 동시에 실행됨!");
             }
             catch (Exception ex)
             {

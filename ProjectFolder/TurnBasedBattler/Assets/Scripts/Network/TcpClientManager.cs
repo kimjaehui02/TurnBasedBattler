@@ -4,16 +4,18 @@ using System.Text;
 using System;
 using System.Collections;
 using Newtonsoft.Json;
-using System.Threading.Tasks;
+using System.Threading;
 
 public class TcpClientManager : MonoBehaviour
 {
     #region 통신용 변수들
     private const string ServerIp = "127.0.0.1";  // 서버 IP
-    private const int ServerPort = 8080;  // 서버 포트
+    private const int ServerPort = 9090;  // 서버 포트
     private TcpClient _client;
     private NetworkStream _stream;
     private bool _isConnected = false;
+
+    CancellationTokenSource starttoken;
     #endregion
 
     #region 게임플레이용 변수들
@@ -68,57 +70,58 @@ public class TcpClientManager : MonoBehaviour
     #endregion
 
     #region 수신함수
-    public async Task ReceiveFromTCPServerAsync()
+    public IEnumerator ReceiveFromTCPServerCoroutine()
     {
-        try
+        byte[] buffer = new byte[1024];
+
+        while (_client.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
         {
-            byte[] buffer = new byte[1024];
-            while (_client.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
+            if (starttoken.IsCancellationRequested)
             {
-                try
+                Debug.Log("작업이 취소되었습니다.");
+                yield break;
+            }
+
+            try
+            {
+                // 데이터 수신
+                int bytesRead = _stream.Read(buffer, 0, buffer.Length);
+                if (bytesRead > 0)
                 {
-                    int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length); // 비동기적으로 데이터 수신
+                    byte[] data = new byte[bytesRead];
+                    Array.Copy(buffer, 0, data, 0, bytesRead);
 
-                    if (bytesRead > 0)
+                    // 받은 데이터를 UTF-8 문자열로 변환
+                    string json = Encoding.UTF8.GetString(data);
+
+                    // JSON 처리
+                    try
                     {
-                        byte[] data = new byte[bytesRead];
-                        Array.Copy(buffer, 0, data, 0, bytesRead);
-
-                        // 받은 데이터를 UTF-8 문자열로 변환
-                        string json = Encoding.UTF8.GetString(data);
-
-                        // JSON 처리
-                        try
+                        var message = JsonConvert.DeserializeObject<dynamic>(json);
+                        if (message != null)
                         {
-                            var message = JsonConvert.DeserializeObject<dynamic>(json);
-                            if (message != null)
-                            {
-                                HandleConnectionState(message);  // 상태 처리
-                            }
-                            else
-                            {
-                                Debug.Log("Failed to parse JSON.");
-                            }
+                            HandleConnectionState(message);  // 상태 처리
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            Debug.Log($"Error parsing JSON: {ex.Message}");
+                            Debug.Log("Failed to parse JSON.");
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Debug.Log($"Error reading data: {ex.Message}");
-                    break; // 오류 발생 시 연결 종료
+                    catch (Exception ex)
+                    {
+                        Debug.Log($"Error parsing JSON: {ex.Message}");
+                    }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Debug.Log($"Error receiving data: {ex.Message}");
+            catch (Exception ex)
+            {
+                Debug.Log($"Error reading data: {ex.Message}");
+                break; // 오류 발생 시 연결 종료
+            }
+
+            yield return null;
         }
     }
-
 
     private void HandleConnectionState(dynamic message)
     {
@@ -148,7 +151,6 @@ public class TcpClientManager : MonoBehaviour
         }
     }
 
-
     private void HandleConnecting(dynamic message)
     {
         Debug.Log("Handling Connecting state...");
@@ -173,34 +175,25 @@ public class TcpClientManager : MonoBehaviour
     #endregion
 
     #region 연결 및 종료 처리
-    // 서버와 연결을 시작하는 메서드
-    public async Task StartConnection()
+    public IEnumerator StartConnectionCoroutine()
     {
-        try
-        {
-            // TCP 클라이언트 연결
-            _client = new TcpClient(ServerIp, ServerPort);
-            _stream = _client.GetStream();
-            _isConnected = true;
-            Debug.Log("서버에 연결되었습니다.");
+        // TCP 클라이언트 연결
+        _client = new TcpClient(ServerIp, ServerPort);
+        _stream = _client.GetStream();
+        _isConnected = true;
+        Debug.Log("서버에 연결되었습니다.");
 
-            // 서버와 연결 후 초기화 작업
-            SendToTcpServer(ConnectionState.Connecting, new { playerName = "Player1" });
+        // 서버와 연결 후 초기화 작업
+        SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
 
-            // TCP 데이터 수신 시작
-            await ReceiveFromTCPServerAsync();
-            Debug.Log("TCP 데이터 수신 종료");
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"서버 연결 중 오류 발생: {ex.Message}");
-        }
+        // TCP 데이터 수신 시작
+        yield return StartCoroutine(ReceiveFromTCPServerCoroutine());
+        Debug.Log("TCP 데이터 수신 종료");
     }
 
-
-    private async void Start()
+    private void Start()
     {
-        await StartConnection();
+        StartCoroutine(StartConnectionCoroutine());
     }
 
     // 연결된 서버와 통신을 계속할 수 있게 하는 메서드 (매 프레임마다 호출)
@@ -221,6 +214,7 @@ public class TcpClientManager : MonoBehaviour
                 _client?.Close();
                 Debug.Log("서버와의 연결을 종료했습니다.");
             }
+            starttoken?.Cancel();
         }
         catch (Exception ex)
         {
@@ -235,4 +229,3 @@ public class TcpClientManager : MonoBehaviour
     }
     #endregion
 }
-

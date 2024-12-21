@@ -7,10 +7,13 @@
     <ClCompile Include="Server.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="ServerState.cpp">
+    <ClCompile Include="SubServerManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="UpdateHandler.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SubServer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -21,13 +24,16 @@
     <ClInclude Include="Server.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="ServerState.h">
+    <ClInclude Include="SubServerManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="UpdateHandler.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ConnectionState.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SubServer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

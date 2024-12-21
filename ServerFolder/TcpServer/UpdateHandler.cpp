@@ -1,11 +1,17 @@
 #include "UpdateHandler.h"
+#include "SubServer.h"
+#include "SubServerManager.h"
 #include "json.hpp"
+
 
 using json = nlohmann::json;
 
+
+
+
 UpdateHandler::UpdateHandler(SOCKET clientSocket) : clientSocket(clientSocket) {}
 
-void UpdateHandler::HandleConnectionState(char* buffer, int bytesReceived) 
+void UpdateHandler::HandleConnectionState(char* buffer, int bytesReceived, SendToTCPClient callback)
 {
     // 받은 데이터를 문자열로 변환
     std::string jsonMessage(buffer, bytesReceived);
@@ -22,23 +28,23 @@ void UpdateHandler::HandleConnectionState(char* buffer, int bytesReceived)
 
             if (connectionState == "Connecting") 
             {
-                HandleConnecting(parsedMessage);
+                HandleConnecting(parsedMessage, callback);
             }
             else if (connectionState == "DataSyncing") 
             {
-                HandleDataSyncing(parsedMessage);
+                HandleDataSyncing(parsedMessage, callback);
             }
             else if (connectionState == "Disconnecting") 
             {
-                HandleDisconnecting(parsedMessage);
+                HandleDisconnecting(parsedMessage, callback);
             }
             else if (connectionState == "Error")
             {
-                HandleError(parsedMessage);
+                HandleError(parsedMessage, callback);
             }
             else if (connectionState == "TcpToUdp")
             {
-                HandleTcpToUdp(parsedMessage);
+                HandleTcpToUdp(parsedMessage, callback);
             }
             else 
             {
@@ -62,27 +68,52 @@ void UpdateHandler::HandleConnectionState(char* buffer, int bytesReceived)
     }
 }
 
-void UpdateHandler::HandleConnecting(const json& message) {
+void UpdateHandler::HandleConnecting(const json& message, SendToTCPClient callback) {
     std::cout << "Handling Connecting state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
+    std::string playerName = message["data"]["playerName"];
+    if (playerName == "udpServer") {
+        std::cout << "Player name is 'udpServer'." << std::endl;
+        // 추가 처리 로직...
+        std::string serverIp = message["data"]["ServerIp"];
+        int tcpPort = message["data"]["tcpPort"];
+        int udpPort = message["data"]["udpPort"];
+
+        // SubServer 객체 생성
+        SubServer server(serverIp, tcpPort, udpPort);
+
+        // SubServerManager의 incrementClientCount 호출
+        SubServerManager::incrementClientCount(server);
+
+
+
+
+    }
+    else if (playerName == "client") {
+        std::cout << "Player name is 'client'." << std::endl;
+        // 추가 처리 로직...
+    }
+    else {
+        std::cout << "다른경우입니다 플레이어네임은 : " << playerName << std::endl;
+    }
 }
 
-void UpdateHandler::HandleDataSyncing(const json& message) {
+void UpdateHandler::HandleDataSyncing(const json& message, SendToTCPClient callback) {
     std::cout << "Handling DataSyncing state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
 }
 
-void UpdateHandler::HandleDisconnecting(const json& message) {
+void UpdateHandler::HandleDisconnecting(const json& message, SendToTCPClient callback) {
     std::cout << "Handling Disconnecting state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
 }
 
-void UpdateHandler::HandleError(const json& message) {
+void UpdateHandler::HandleError(const json& message, SendToTCPClient callback) {
     std::cerr << "Handling Error state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
 }
 
-void UpdateHandler::HandleTcpToUdp(const json& message) {
+void UpdateHandler::HandleTcpToUdp(const json& message, SendToTCPClient callback) {
     std::cerr << "Handling TcpToUdp state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
 }
@@ -93,9 +124,6 @@ void UpdateHandler::handleInitialDataRequest() {
     json response;
     response["command"] = "PONG";
     response["message"] = "Initial data response from server";
-    sendResponse(response.dump());
+    //sendResponse(response.dump());
 }
 
-void UpdateHandler::sendResponse(const std::string& response) {
-    send(clientSocket, response.c_str(), response.size(), 0);   // 클라이언트로 응답 전송
-}

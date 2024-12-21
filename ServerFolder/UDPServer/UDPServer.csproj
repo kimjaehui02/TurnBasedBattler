@@ -81,6 +81,8 @@
     <Compile Include="PlayerManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TcpConnection.cs" />
+    <Compile Include="UdpConnection.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

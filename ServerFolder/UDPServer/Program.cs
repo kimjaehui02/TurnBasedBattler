@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+
 //using System.Net.Sockets;
 
 // 또하나의 송수신 철칙
@@ -25,7 +27,7 @@ class UdpServer
 
 
     #region 통신용 변수들
-    private const int Port = 9090; // 서버 포트
+    //private const int Port = 9090; // 서버 포트
     #endregion
 
     #region 유저정보
@@ -43,35 +45,75 @@ class UdpServer
         UDPServer.TcpConnection tcpConnection = new UDPServer.TcpConnection();
         UDPServer.UdpConnection udpConnection = new UDPServer.UdpConnection(playerManager);
 
-
-
-        UdpClient udpServer = new UdpClient(Port); // 서버 포트 지정
+        (int tcpPort, int udpPort) = FindAvailablePorts();
 
 
 
-        //IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0); // 클라이언트로부터 오는 모든 데이터를 수신
+        #region tcp연결구현
+        Console.WriteLine("TCP 연결 시작...");
+        var tcpTask = Task.Run(() => tcpConnection.StartConnection(ServerIp, ServerPort, tcpPort, udpPort));
+        #endregion tcp연결구현 끝
 
-        // UdpServer 인스턴스 생성
-        // UdpServer serverInstance = new UdpServer();
+
 
         #region udp연결구현
         // CancellationTokenSource 생성
         var cancellationTokenSource = new CancellationTokenSource();
         CancellationToken token = cancellationTokenSource.Token;
+        
 
         // 서버 작업 비동기로 실행
-        var serverTask = udpConnection.RunServerAsync(udpServer, token);
+        var serverTask = Task.Run(() => udpConnection.StartConnection(ServerIp, ServerPort, udpPort));
+        Console.WriteLine("var serverTask = udpConnection.RunServerAsync(udpServer, token);");
+        #endregion udp연결구현 끝
 
-        #endregion
+        // 모든 비동기 작업을 병렬로 실행
+        Console.WriteLine("서버 작업이 동시에 실행됩니다.");
+        await Task.WhenAll(tcpTask, serverTask); // 모든 비동기 작업 완료 대기
 
-        // 서버가 종료될 때까지 대기
-        Console.WriteLine("서버를 종료하려면 'Enter'를 누르세요.");
-        Console.ReadLine();
-        cancellationTokenSource.Cancel();
-
-        // 서버 작업이 종료될 때까지 기다림
-        await serverTask;
         Console.WriteLine("서버가 종료되었습니다.");
+    }
+
+    public static (int TcpPort, int UdpPort) FindAvailablePorts()
+    {
+        int tcpPort = FindAvailablePort();  // TCP 포트 찾기
+        int udpPort = FindAvailablePort();  // UDP 포트 찾기 (다른 포트 번호를 반환)
+
+        return (tcpPort, udpPort);
+    }
+
+    private static int FindAvailablePort()
+    {
+        // 1024부터 65535까지의 포트 번호 중 사용 가능한 포트를 찾습니다.
+        for (int port = 1024; port <= 65535; port++)
+        {
+            if (IsPortAvailable(port))
+            {
+                return port;  // 사용 가능한 포트 번호 반환
+            }
+        }
+        throw new Exception("No available port found.");
+    }
+
+    private static bool IsPortAvailable(int port)
+    {
+        var tcpListener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Any, port);
+        try
+        {
+            // 포트가 사용 가능한지 확인하기 위해 시작하고 바로 멈추기
+            tcpListener.Start();
+            return true;  // 포트가 사용 가능함
+        }
+        catch
+        {
+            // 예외가 발생하면 포트가 이미 사용 중이므로 사용할 수 없음
+            return false;
+        }
+        finally
+        {
+            // tcpListener가 IDisposable을 구현하므로 명시적으로 Stop 호출
+            tcpListener.Stop();
+        }
     }
 
 

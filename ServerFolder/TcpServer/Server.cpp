@@ -2,17 +2,22 @@
 #include <iostream>  // 콘솔 입출력을 위한 라이브러리
 #include <thread>    // 멀티스레딩 처리를 위한 라이브러리
 #include <winsock2.h>  // Windows 소켓 API를 사용하기 위한 라이브러리
+#include <Ws2tcpip.h>  // 윈도우에서 IP 주소 변환을 위한 헤더 파일
+
+
 #pragma warning(disable: 28020)
 // json.hpp가 포함된 코드
 #include "json.hpp"
 #pragma warning(default: 28020) // 다시 경고 활성화
 
 #include "UpdateHandler.h"
+#include "SubServer.h"
 
 
 // Server 생성자
 Server::Server(int port)
-    : port(port), running(false), serverSocket(INVALID_SOCKET) { // 멤버 변수 초기화
+    : port(port), running(false), serverSocket(INVALID_SOCKET) 
+{ // 멤버 변수 초기화
     WSADATA wsaData; // Winsock 초기화를 위한 구조체
     // Winsock 초기화
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {  // 실패하면 오류 메시지 출력 후 종료
@@ -119,17 +124,60 @@ void Server::acceptConnections() {
 void Server::RunServerAsync(SOCKET clientSocket) {
     char buffer[1024];      // 데이터를 저장할 버퍼
     int bytesReceived;      // 수신된 데이터 크기
-
+    
+    int ServerCheck = -1;
+    std::string ServerIp = "";
+    int tcpPort = 0;
+    int udpPort = 0;
     // 클라이언트로부터 데이터를 지속적으로 수신
     while ((bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) 
     {
+        if (ServerCheck == -1)
+        {
+            // 수신한 데이터를 UTF-8 문자열로 변환
+            std::string jsonMessage(buffer, bytesReceived);
+
+            // JSON 파싱
+            nlohmann::json parsedMessage = nlohmann::json::parse(jsonMessage);
+
+            if (parsedMessage["data"].contains("playerName") && parsedMessage["data"]["playerName"] == "udpServer")
+            {
+                ServerIp = parsedMessage["data"]["ServerIp"];
+                tcpPort = parsedMessage["data"]["tcpPort"];
+                udpPort = parsedMessage["data"]["udpPort"];
+
+                ServerCheck = 1;
+                std::cerr << "서버가 접근하엿습니다" << std::endl;
+                std::cerr << SubServerManager::subServerListToJson() << std::endl;
+            }
+            else
+            {
+                ServerCheck = 0;
+            }
+
+
+        }
+
         ReceiveFromTCPClient(clientSocket, buffer, bytesReceived);
     }
+
+
 
     // 수신 실패 시 오류 처리
     if (bytesReceived == SOCKET_ERROR) {
         std::cerr << "recv failed. Error: " << WSAGetLastError() << std::endl;
     }
+
+    if (ServerCheck == 1)
+    {
+        std::cerr <<  SubServerManager::subServerListToJson() << std::endl;
+        std::cerr << "서버가 제거되었습니다" << ServerIp << port << std::endl;
+        SubServer sub(ServerIp, tcpPort, udpPort);
+        SubServerManager::decrementClientCount(sub);
+        
+        std::cerr << "서버가 제거되었습니다"<< SubServerManager::getClientCount() << std::endl;
+    }
+
 
     // 클라이언트 소켓 닫기
     closesocket(clientSocket);
@@ -168,6 +216,9 @@ void Server::ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesRe
         // 클라이언트가 진행중일때 해줄 처리들을 모아놓은것
         UpdateHandler handler(clientSocket);
         handler.HandleConnectionState(buffer, bytesReceived);  // 메시지 처리
+
+
+       
     }
     catch (const std::exception& ex) 
     {
@@ -217,3 +268,4 @@ void Server::SendToTCPClient(SOCKET clientSocket, ConnectionState connectionStat
     // 동적으로 할당된 메모리 해제
     delete[] sendBuffer;
 }
+
