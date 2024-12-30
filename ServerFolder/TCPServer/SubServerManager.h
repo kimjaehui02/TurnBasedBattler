@@ -29,7 +29,12 @@ public:
             jsonArray.push_back(server.subServerToJson());
         }
 
-        return jsonArray;
+        // 배열을 감싸는 객체 생성
+        nlohmann::json result;
+        result["subServerList"] = jsonArray;
+        result["totalServers"] = subServers.size();
+
+        return result;
     }
 
     static void incrementClientCount(const SubServer& server);  // 클라이언트 수 증가

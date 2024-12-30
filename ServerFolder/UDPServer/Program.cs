@@ -42,10 +42,11 @@ class UdpServer
     {
         Console.WriteLine("UDP 서버 시작...");
         PlayerManager playerManager = new PlayerManager();
-        UDPServer.TcpConnection tcpConnection = new UDPServer.TcpConnection();
+        UDPServer.TcpConnection tcpConnection = new UDPServer.TcpConnection(playerManager);
         UDPServer.UdpConnection udpConnection = new UDPServer.UdpConnection(playerManager);
 
         (int tcpPort, int udpPort) = FindAvailablePorts();
+        Console.WriteLine($"tcpPort : {tcpPort}, udpPort : {udpPort}");
 
 
 
@@ -76,45 +77,62 @@ class UdpServer
 
     public static (int TcpPort, int UdpPort) FindAvailablePorts()
     {
-        int tcpPort = FindAvailablePort();  // TCP 포트 찾기
-        int udpPort = FindAvailablePort();  // UDP 포트 찾기 (다른 포트 번호를 반환)
+        // UDP 포트를 먼저 찾고, 그 다음 TCP 포트를 찾습니다.
+        int udpPort = FindAvailablePort(true);  // UDP 포트 찾기
+        int tcpPort = FindAvailablePort(false); // TCP 포트 찾기 (UDP와 충돌하지 않는 포트 번호 반환)
 
-        return (tcpPort, udpPort);
+        //return (tcpPort, udpPort);
+        return (udpPort, udpPort);
     }
 
-    private static int FindAvailablePort()
+    private static int FindAvailablePort(bool isUdp)
     {
         // 1024부터 65535까지의 포트 번호 중 사용 가능한 포트를 찾습니다.
         for (int port = 1024; port <= 65535; port++)
         {
-            if (IsPortAvailable(port))
+            if (IsPortAvailable(port, isUdp))
             {
+                Console.WriteLine($"사용 가능한 포트 발견: {port} ({(isUdp ? "UDP" : "TCP")})");
                 return port;  // 사용 가능한 포트 번호 반환
             }
         }
-        throw new Exception("No available port found.");
+        throw new Exception("사용 가능한 포트를 찾을 수 없습니다.");
     }
 
-    private static bool IsPortAvailable(int port)
+    private static bool IsPortAvailable(int port, bool isUdp)
     {
-        var tcpListener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Any, port);
         try
         {
-            // 포트가 사용 가능한지 확인하기 위해 시작하고 바로 멈추기
-            tcpListener.Start();
-            return true;  // 포트가 사용 가능함
+            if (isUdp)
+            {
+                // UDP 포트가 사용 가능한지 확인
+                using (UdpClient udpClient = new UdpClient())
+                {
+                    udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, port));  // UDP 포트에 바인딩 시도
+                    udpClient.Close();  // 바인딩이 성공하면 바로 닫음
+                }
+            }
+            else
+            {
+                // TCP 포트가 사용 가능한지 확인
+                using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                {
+                    socket.Bind(new IPEndPoint(IPAddress.Any, port));  // TCP 포트에 바인딩 시도
+                    socket.Close();  // 바인딩이 성공하면 바로 소켓을 닫음
+                }
+            }
+            return true;  // 포트가 사용 가능
         }
-        catch
+        catch (SocketException ex)
         {
-            // 예외가 발생하면 포트가 이미 사용 중이므로 사용할 수 없음
+            // 포트를 바인딩할 수 없으면 이미 사용 중인 포트임
+            Console.WriteLine($"포트 {port} 바인딩 실패: {ex.Message}");
             return false;
         }
-        finally
-        {
-            // tcpListener가 IDisposable을 구현하므로 명시적으로 Stop 호출
-            tcpListener.Stop();
-        }
     }
+
+
+
 
 
 }

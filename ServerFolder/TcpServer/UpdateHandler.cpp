@@ -11,7 +11,7 @@ using json = nlohmann::json;
 
 UpdateHandler::UpdateHandler(SOCKET clientSocket) : clientSocket(clientSocket) {}
 
-void UpdateHandler::HandleConnectionState(char* buffer, int bytesReceived, SendToTCPClient callback)
+void UpdateHandler::HandleConnectionState(char* buffer, int bytesReceived, const SendFunction& callback)
 {
     // 받은 데이터를 문자열로 변환
     std::string jsonMessage(buffer, bytesReceived);
@@ -68,7 +68,7 @@ void UpdateHandler::HandleConnectionState(char* buffer, int bytesReceived, SendT
     }
 }
 
-void UpdateHandler::HandleConnecting(const json& message, SendToTCPClient callback) {
+void UpdateHandler::HandleConnecting(const json& message, const SendFunction& callback) {
     std::cout << "Handling Connecting state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
     std::string playerName = message["data"]["playerName"];
@@ -92,28 +92,31 @@ void UpdateHandler::HandleConnecting(const json& message, SendToTCPClient callba
     else if (playerName == "client") {
         std::cout << "Player name is 'client'." << std::endl;
         // 추가 처리 로직...
+
+        returnListOfServer(callback);
+
     }
     else {
         std::cout << "다른경우입니다 플레이어네임은 : " << playerName << std::endl;
     }
 }
 
-void UpdateHandler::HandleDataSyncing(const json& message, SendToTCPClient callback) {
+void UpdateHandler::HandleDataSyncing(const json& message, const SendFunction& callback) {
     std::cout << "Handling DataSyncing state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
 }
 
-void UpdateHandler::HandleDisconnecting(const json& message, SendToTCPClient callback) {
+void UpdateHandler::HandleDisconnecting(const json& message, const SendFunction& callback) {
     std::cout << "Handling Disconnecting state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
 }
 
-void UpdateHandler::HandleError(const json& message, SendToTCPClient callback) {
+void UpdateHandler::HandleError(const json& message, const SendFunction& callback) {
     std::cerr << "Handling Error state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
 }
 
-void UpdateHandler::HandleTcpToUdp(const json& message, SendToTCPClient callback) {
+void UpdateHandler::HandleTcpToUdp(const json& message, const SendFunction& callback) {
     std::cerr << "Handling TcpToUdp state with message: " << message.dump() << std::endl;
     // 추가 처리 로직...
 }
@@ -127,3 +130,15 @@ void UpdateHandler::handleInitialDataRequest() {
     //sendResponse(response.dump());
 }
 
+
+
+
+// 함수 매개변수에 적용
+void UpdateHandler::returnListOfServer(const SendFunction& sendFunction) {
+    std::cerr << "void UpdateHandler::returnListOfServer(SendFunction)" << std::endl;
+
+    ConnectionState state = ConnectionState::Connecting;
+
+    // 전달받은 함수 호출
+    sendFunction(clientSocket, state, SubServerManager::subServerListToJson());
+}

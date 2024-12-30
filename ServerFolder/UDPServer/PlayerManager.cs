@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
 
 class PlayerManager
 {
@@ -9,7 +10,7 @@ class PlayerManager
     private static int nextPlayerId = 0; // 자동으로 할당되는 플레이어 ID
 
     // 플레이어 추가 함수 (빈 ID로 채움)
-    public int AddPlayer(IPEndPoint iPEndPoint)
+    public int AddPlayer(TcpClient asyncToClient)
     {
         int playerId;
 
@@ -24,7 +25,7 @@ class PlayerManager
             nextPlayerId++; // ID를 자동으로 증가
         }
 
-        players.Add(playerId, new PlayerConnection(iPEndPoint));
+        players.Add(playerId, new PlayerConnection(asyncToClient));
         Console.WriteLine($"Player added with ID: {playerId}");
         return playerId;
     }

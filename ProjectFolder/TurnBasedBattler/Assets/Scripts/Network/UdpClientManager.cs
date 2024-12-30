@@ -11,18 +11,22 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.VisualScripting.Antlr3.Runtime;
 using Newtonsoft.Json.Linq;
+using UnityEngine.Windows;
 
 public class UdpClientManager : MonoBehaviour
 {
     #region 통신용 변수들
-    private const string ServerIp = "127.0.0.1"; // 서버 IP
-    private const int ServerPort = 9090; // 서버 포트
+    //private const string ServerIp = "127.0.0.1"; // 서버 IP
+    //private const int ServerPort = 9090; // 서버 포트
     private UdpClient udpClient;
-    public int myId = -1;  // 내 id, 서버에서 받아온 값으로 설정
+    //public int myId = -1;  // 내 id, 서버에서 받아온 값으로 설정
     CancellationTokenSource cancellationTokenSource;
 
-    private float sendInterval = 5f; // 좌표 전송 간격
+    private const float sendInterval = 1f; // 좌표 전송 간격
     private float lastSendTime = 0f;
+
+    [SerializeField]
+    private bool isConnected = false;  // 연결 상태 추적 변수 추가
     #endregion
 
     #region 게임플레이용 변수들
@@ -81,7 +85,9 @@ public class UdpClientManager : MonoBehaviour
         try
         {
             Debug.Log($"2. try : ");
-            StartCoroutine(ReceiveFromUDPServerCoroutine(udpServer, token));  // 코루틴으로 비동기 처리
+            
+            //StartCoroutine(ReceiveFromUDPServerCoroutine(udpServer, token));  // 코루틴으로 비동기 처리
+
         }
         catch (Exception ex)
         {
@@ -91,45 +97,37 @@ public class UdpClientManager : MonoBehaviour
     }
 
 
-
     public IEnumerator ReceiveFromUDPServerCoroutine(UdpClient udpServer, CancellationToken token)
     {
-        Debug.Log($"public IEnumerator ReceiveFromUDPServerCoroutine(UdpClient udpServer, CancellationToken token)");
+        Debug.Log("Start receiving data from UDP server...");
+
         while (!token.IsCancellationRequested)
         {
-            // 데이터 수신 대기
-            UdpReceiveResult? result = null; // Nullable로 변경
 
-            // 데이터 수신 대기
-            yield return new WaitUntil(() =>
+            // 비동기적으로 UDP 데이터 받기
+            var resultTask = udpServer.ReceiveAsync();
+
+            // 결과가 완료될 때까지 대기
+            yield return new WaitUntil(() => resultTask.IsCompleted);
+
+            // 비동기 작업이 완료되면 데이터 추출
+            UdpReceiveResult result = resultTask.Result;
+
+            if (result.Buffer.Length > 0)
             {
-                try
-                {
-                    // ReceiveAsync를 비동기적으로 호출하고 결과를 받음
-                    result = udpServer.ReceiveAsync().Result;
-                    return result.HasValue; // result가 null이 아니면 true 반환
-                }
-                catch (Exception ex)
-                {
-                    Debug.Log($"Error receiving data: {ex.Message}");
-                    return false;
-                }
-            });
+                byte[] data = result.Buffer;  // 받은 데이터
+                IPEndPoint remoteEP = result.RemoteEndPoint; // 송신자 정보
 
-            if (result.HasValue)
-            {
-                byte[] data = result.Value.Buffer;  // result.Value를 사용하여 데이터 추출
-                IPEndPoint remoteEP = result.Value.RemoteEndPoint;
-
-                string json = Encoding.UTF8.GetString(data);
-                Debug.Log("Received data: " + json);
+                string json = Encoding.UTF8.GetString(data); // UTF-8로 문자열 변환
+                Debug.Log($"Received data: {json}");
 
                 try
                 {
+                    // JSON 파싱
                     var message = JsonConvert.DeserializeObject<dynamic>(json);
-                    Debug.Log($"ReceiveFromUDPServer종료 message : {message}");
                     if (message != null)
                     {
+                        // 메시지 처리
                         HandleConnectionState(message);
                     }
                     else
@@ -142,11 +140,18 @@ public class UdpClientManager : MonoBehaviour
                     Debug.Log($"Error parsing JSON: {ex.Message}");
                 }
             }
+            else
+            {
+                Debug.Log("Received empty buffer.");
+            }
 
-            yield return null;  // 계속해서 대기
+
+            // 일정 시간 간격 후 반복
+            yield return null;  // 계속해서 데이터를 대기
         }
-    }
 
+        Debug.Log("Stopped receiving data.");
+    }
 
 
     private void HandleConnectionState(dynamic message)
@@ -176,8 +181,9 @@ public class UdpClientManager : MonoBehaviour
     private void HandleConnecting(dynamic message)
     {
         Debug.Log("Handling Connecting state...");
-        myId = message.data.playerId;
-        Debug.Log($"Assigned myId: {myId}");
+        //GameManager.Instance.SetPlayerId(message.data.playerId);
+        
+        Debug.Log($"Assigned myId: {GameManager.Instance.GetPlayerId()}");
     }
 
     private void HandleDataSyncing(dynamic message)
@@ -197,7 +203,7 @@ public class UdpClientManager : MonoBehaviour
     #endregion
 
     #region 통신 시작, 지속적 송수신, 종료 알림
-    public void StartConnectionCoroutine()
+    public IEnumerator StartConnectionCoroutine(string inputIp, int inputPort)
     {
         // 서버와 연결 상태가 아닌 경우에만 새로 연결
         if (udpClient == null || udpClient.Client == null || udpClient.Client.Connected == false)
@@ -207,15 +213,17 @@ public class UdpClientManager : MonoBehaviour
                 Quit();
             }
 
-            udpClient = new UdpClient(ServerIp, ServerPort);
-
+            udpClient = new UdpClient(inputIp, inputPort);
+            isConnected = true;
             SendToUDPServer(ConnectionState.Connecting, new { playerName = "Player1" });
 
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
             CancellationToken token = cancellationTokenSource.Token;
 
             // 지속적인 통신 시작
-            RunServerCoroutine(udpClient, cancellationTokenSource.Token);
+            //yield return StartCoroutine(RunServerCoroutine(udpClient, cancellationTokenSource.Token));
+            yield return StartCoroutine(ReceiveFromUDPServerCoroutine(udpClient, token));
+
             Debug.Log("서버에 연결됨.");
         }
         else
@@ -226,6 +234,11 @@ public class UdpClientManager : MonoBehaviour
 
     public void Updatecyle()
     {
+        if(isConnected == false)
+        {
+            return;
+        }
+
         float currentTime = Time.realtimeSinceStartup;
         if (currentTime - lastSendTime >= sendInterval)
         {
@@ -233,38 +246,29 @@ public class UdpClientManager : MonoBehaviour
             {
                 positionX = myPlayerObject.transform.position.x,
                 positionY = myPlayerObject.transform.position.y,
+                userID = GameManager.Instance.GetPlayerId(),
             });
 
             lastSendTime = currentTime;
         }
     }
 
-    void Start()
+    public void ConnectServer(string inputIp, int inputPort)
     {
-        Application.runInBackground = true;
-
         cancellationTokenSource = new CancellationTokenSource();
         CancellationToken token = cancellationTokenSource.Token;
-        StartConnectionCoroutine();  // 코루틴을 호출합니다.
+        StartCoroutine(StartConnectionCoroutine(inputIp, inputPort));  // 코루틴을 호출합니다.
     }
 
-    void Update()
-    {
-        Updatecyle();
-    }
-
-    public void OnApplicationQuit()
-    {
-        Quit();
-    }
 
     public void Quit()
     {
         try
         {
-            SendToUDPServer(ConnectionState.Disconnecting, new { playerId = myId });
+            SendToUDPServer(ConnectionState.Disconnecting, new { playerId = GameManager.Instance.GetPlayerId() });
             if (udpClient != null)
             {
+                isConnected = false;
                 udpClient.Close();
                 cancellationTokenSource.Cancel();
                 Debug.Log("Disconnected and closed UDP client.");
@@ -276,4 +280,14 @@ public class UdpClientManager : MonoBehaviour
         }
     }
     #endregion
+
+    void Update()
+    {
+        Updatecyle();
+    }
+
+    public void OnApplicationQuit()
+    {
+        Quit();
+    }
 }

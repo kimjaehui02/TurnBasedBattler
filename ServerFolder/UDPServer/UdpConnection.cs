@@ -146,9 +146,9 @@ namespace UDPServer
         {
             Console.WriteLine("Handling Connecting state...");
             // 여기에서 플레이어 연결 처리 로직 추가
-            int id = playerManager.AddPlayer(remoteEP);
+            //int id = playerManager.AddPlayer(remoteEP);
             Console.WriteLine($"HandleConnecting의 보내는 remoteEP: {remoteEP}");
-            SendToUDPClient(udpClient, remoteEP, ConnectionState.Connecting, new { playerId = id });
+            //SendToUDPClient(udpClient, remoteEP, ConnectionState.Connecting, new { playerId = 0 });
         }
 
         private void HandleDataSyncing(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)

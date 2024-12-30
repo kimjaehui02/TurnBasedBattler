@@ -11,6 +11,10 @@
 #include "ConnectionState.h"
 #include "SubServerManager.h"
 #include "SubServer.h"
+#include <functional>
+
+// Server의 SendToTCPClient 함수 포인터 타입 정의
+using SendFunction = std::function<void(SOCKET, ConnectionState, const nlohmann::json&)>;
 
 class Server {
 public:
@@ -29,7 +33,7 @@ private:
     void RunServerAsync(SOCKET clientSocket);
 
     // 클라이언트간의 교류
-    void SendToTCPClient(SOCKET clientSocket, ConnectionState connectionState, const std::string& messageData);
+    void SendToTCPClient(SOCKET clientSocket, ConnectionState connectionState, const nlohmann::json& messageData);
     void ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesReceived);
 
     // UDP서버간의 교류

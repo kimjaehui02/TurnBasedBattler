@@ -11,6 +11,11 @@ namespace UDPServer
 {
     class TcpConnection
     {
+        PlayerManager playerManager;
+        public TcpConnection(PlayerManager playerManager)
+        {
+            this.playerManager = playerManager;
+        }
         #region 변수들
 
         #region 메인서버의 정보들
@@ -213,8 +218,43 @@ namespace UDPServer
 
         #endregion tcp수신함수 끝
 
+        #region 클라와의 tcp송신함수
+        static void SendToTcpClient(TcpClient asyncToClient, ConnectionState connectionState, object messageData)
+        {
+            try
+            {
+                // 메시지 구성
+                var message = new
+                {
+                    connectionState = connectionState.ToString(), // Enum 값을 문자열로 변환
+                    data = messageData
+                };
 
-        #region 클라와의 tcp연결함수
+                // 직렬화 시 무한 참조 방지 설정
+                var settings = new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                };
+
+                // 객체를 JSON 문자열로 직렬화
+                string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented, settings);
+
+                // 디버깅용으로 JSON 출력
+                /*Console.WriteLine($"보내는 JSON: {jsonMessage}");*/
+
+                // TCP를 통해 서버로 메시지 전송
+                NetworkStream stream = asyncToClient.GetStream();
+                byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
+                stream.Write(data, 0, data.Length);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"TCP 전송 중 오류 발생: {ex.Message}");
+            }
+        }
+        #endregion 클라와의 tcp송신함수 끝
+
+        #region 클라와의 tcp수신함수
 
         // 0. 런 에드 클라이언트
 
@@ -245,7 +285,7 @@ namespace UDPServer
         }
 
         // 1. 런
-        
+
         /// <summary>
         /// 클라이언트와 1대1이 되는 비동기
         /// </summary>
@@ -253,18 +293,33 @@ namespace UDPServer
         /// <returns></returns>
         public async Task RunServerAsyncToClient(TcpClient asyncToClient)
         {
+            int id = -1;
             try
             {
-                while (asyncToClient == null || !asyncToClient.Connected)  // 서버가 꺼지지 않은 이상 계속 반복
+                // 플레이어 추가
+                id = playerManager.AddPlayer(asyncToClient);
+                SendToTcpClient(asyncToClient, ConnectionState.Connecting, new { playerId = id });
+                // 클라이언트가 연결되어 있을 동안 데이터를 받음
+                while (asyncToClient != null && asyncToClient.Connected)
                 {
                     await ReceiveFromClientAsync(asyncToClient);
+                    SendToTcpClient(asyncToClient, ConnectionState.Connecting, null);
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"1. 런 중 오류 발생: {ex.Message}");
             }
+            finally
+            {
+                // 클라이언트 연결 종료 후, 플레이어 삭제
+                if (id != -1)
+                {
+                    playerManager.DeletePlayer(id);
+                }
+            }
         }
+
 
         // 2. 리시브
 
@@ -408,7 +463,11 @@ namespace UDPServer
 
                 // TCP 데이터 수신 시작
                 // 두 비동기 함수 동시에 실행
+
+                // 메인서버랑 주고받는 놈
                 var runServerAsyncTask = RunServerAsync();  // 비동기 실행 준비
+
+                // 클라들이랑 주고받는 놈
                 var runServerAsyncToAddClientTask = RunServerAsyncToAddClient();  // 비동기 실행 준비
 
                 Console.WriteLine("두 함수가 동시에 실행됨!");

@@ -14,6 +14,7 @@
 #include "SubServer.h"
 
 
+
 // Server 생성자
 Server::Server(int port)
     : port(port), running(false), serverSocket(INVALID_SOCKET) 
@@ -215,7 +216,9 @@ void Server::ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesRe
         // 필요한 처리를 여기서 계속할 수 있음...
         // 클라이언트가 진행중일때 해줄 처리들을 모아놓은것
         UpdateHandler handler(clientSocket);
-        handler.HandleConnectionState(buffer, bytesReceived);  // 메시지 처리
+        SendFunction sendFunc = std::bind(&Server::SendToTCPClient, this, std::placeholders::_1, ConnectionState::Connecting, std::placeholders::_3);
+        handler.HandleConnectionState(buffer, bytesReceived, sendFunc);  // 메시지 처리
+
 
 
        
@@ -226,8 +229,9 @@ void Server::ReceiveFromTCPClient(SOCKET clientSocket, char* buffer, int bytesRe
     }
 }
 
-void Server::SendToTCPClient(SOCKET clientSocket, ConnectionState connectionState, const std::string& messageData)
+void Server::SendToTCPClient(SOCKET clientSocket, ConnectionState connectionState, const nlohmann::json& messageData)
 {
+    std::cerr << "SendToTCPClient" << std::endl;
     // 연결 상태를 문자열로 변환 (ConnectionState를 문자열로 변환)
     std::string connectionStateStr;
     switch (connectionState) 
@@ -244,7 +248,7 @@ void Server::SendToTCPClient(SOCKET clientSocket, ConnectionState connectionStat
     // 보낼 데이터 객체 만들기 (JSON)
     nlohmann::json message;
     message["connectionState"] = connectionStateStr;
-    message["data"] = "Your message here";  // 여기에 필요한 데이터를 추가
+    message["data"] = messageData;  // 여기에 필요한 데이터를 추가
 
     // JSON을 문자열로 변환
     std::string jsonMessage = message.dump(); // JSON 문자열
