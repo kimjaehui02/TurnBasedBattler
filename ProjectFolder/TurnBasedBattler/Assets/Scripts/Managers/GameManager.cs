@@ -67,8 +67,8 @@ public class GameManager : MonoBehaviour
 
     public void ConnectSubServer(string Ip, int tcpPort, int udpPort)
     {
-        tcpMainClientManager.ConnectServer(Ip, tcpPort);
-        //udpClientManager.ConnectServer(Ip, udpPort);
+        tcpSubClientManager.ConnectServer(Ip, tcpPort);
+        udpClientManager.ConnectServer(Ip, udpPort);
     }
 
     // PlayerId를 설정하는 함수
