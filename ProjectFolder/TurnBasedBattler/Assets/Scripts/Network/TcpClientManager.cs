@@ -14,12 +14,15 @@ public class TcpClientManager : MonoBehaviour
     #region 통신용 변수들
     //private const string ServerIp = "127.0.0.1";  // 서버 IP
     //private const int ServerPort = 9090;  // 서버 포트
-    private TcpClient _client;
-    private NetworkStream _stream;
+    private TcpClient _client_main;
+    private NetworkStream _stream_main;
+    private TcpClient _client_sub;
+    private NetworkStream _stream_sub;
 
 
 
-    private bool _isConnected = false;
+    private bool _isConnected_main = false;
+    private bool _isConnected_sub = false;
 
     CancellationTokenSource starttoken = new CancellationTokenSource();
     
@@ -43,7 +46,7 @@ public class TcpClientManager : MonoBehaviour
     #endregion
 
     #region 송신함수
-    public void SendToTcpServer(ConnectionState connectionState, object messageData)
+    public void SendToTcpServer(ConnectionState connectionState, object messageData, bool tomain)
     {
         try
         {
@@ -68,7 +71,17 @@ public class TcpClientManager : MonoBehaviour
 
             // TCP를 통해 서버로 메시지 전송
             byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
-            _stream.Write(data, 0, data.Length);
+            if (tomain == true)
+            {
+                _stream_main.Write(data, 0, data.Length);
+
+            }
+            else
+            {
+                _stream_sub.Write(data, 0, data.Length);
+
+            }
+
         }
         catch (Exception ex)
         {
@@ -87,10 +100,10 @@ public class TcpClientManager : MonoBehaviour
         //int testingnumb = 0;
 
         //yield return null;  // 초기화 후 한 프레임 대기
-        yield return new WaitUntil(() => _stream.DataAvailable);  // 데이터가 있을 때까지 기다림
+        yield return new WaitUntil(() => _stream_main.DataAvailable);  // 데이터가 있을 때까지 기다림
 
 
-        while (_client.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
+        while (_client_main.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
         {
             //testingnumb++;
 
@@ -101,20 +114,17 @@ public class TcpClientManager : MonoBehaviour
                 yield break;
             }
 
-            //Debug.Log("if (starttoken.IsCancellationRequested)");
 
-            Debug.Log($"_stream.DataAvailable: {_stream.DataAvailable}");
             // 데이터를 읽을 준비가 되었다면
-            yield return new WaitUntil(() => _stream.DataAvailable);  // 데이터가 있을 때까지 기다림
+            yield return new WaitUntil(() => _stream_main.DataAvailable);  // 데이터가 있을 때까지 기다림
 
 
 
-
-            int bytesRead = _stream.Read(buffer, 0, buffer.Length);
-            Debug.Log($"bytesRead: {bytesRead}");
 
             try
             {
+                int bytesRead = _stream_main.Read(buffer, 0, buffer.Length);
+
 
                 // 데이터 수신
                 //int bytesRead = 0;//_stream.Read(buffer, 0, buffer.Length);
@@ -134,6 +144,78 @@ public class TcpClientManager : MonoBehaviour
                         {
                             HandleConnectionState(message);  // 상태 처리
                             
+                        }
+                        else
+                        {
+                            Debug.Log("Failed to parse JSON.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Log($"Error parsing JSON: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"Error reading data: {ex.Message}");
+            }
+
+            // 데이터를 처리하고 한 프레임 대기
+            yield return null;
+        }
+    }
+    
+    public IEnumerator ReceiveFromTCPSubServerCoroutine()
+    {
+        byte[] buffer = new byte[1024];
+        //int testingnumb = 0;
+
+        //yield return null;  // 초기화 후 한 프레임 대기
+        yield return new WaitUntil(() => _stream_sub.DataAvailable);  // 데이터가 있을 때까지 기다림
+
+
+        while (_client_sub.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
+        {
+            //testingnumb++;
+
+
+            if (starttoken.IsCancellationRequested)
+            {
+                Debug.Log("작업이 취소되었습니다.");
+                yield break;
+            }
+
+
+            // 데이터를 읽을 준비가 되었다면
+            yield return new WaitUntil(() => _stream_sub.DataAvailable);  // 데이터가 있을 때까지 기다림
+
+
+
+
+            try
+            {
+                int bytesRead = _stream_sub.Read(buffer, 0, buffer.Length);
+
+
+                // 데이터 수신
+                //int bytesRead = 0;//_stream.Read(buffer, 0, buffer.Length);
+                if (bytesRead > 0)
+                {
+                    byte[] data = new byte[bytesRead];
+                    Array.Copy(buffer, 0, data, 0, bytesRead);
+
+                    // 받은 데이터를 UTF-8 문자열로 변환
+                    string json = Encoding.UTF8.GetString(data);
+
+                    // JSON 처리
+                    try
+                    {
+                        var message = JsonConvert.DeserializeObject<dynamic>(json);
+                        if (message != null)
+                        {
+                            HandleConnectionState(message);  // 상태 처리
+
                         }
                         else
                         {
@@ -199,17 +281,17 @@ public class TcpClientManager : MonoBehaviour
             if (jsonObject["data"] != null)
             {
                 // playerId 항목 확인
-                //if (jsonObject["data"]["playerId"] != null)
-                //{
-                //    // playerId 값을 처리
-                //    int playerId = jsonObject["data"]["playerId"].ToObject<int>();
-                //    GameManager.Instance.SetPlayerId(playerId);
-                //    Debug.Log($"playerId found: {playerId}");
-                //}
-                //else
-                //{
-                //    Debug.Log("playerId not found in data.");
-                //}
+                if (jsonObject["data"]["playerId"] != null)
+                {
+                    // playerId 값을 처리
+                    int playerId = jsonObject["data"]["playerId"].ToObject<int>();
+                    GameManager.Instance.SetPlayerId(playerId);
+                    Debug.Log($"playerId found: {playerId}");
+                }
+                else
+                {
+                    Debug.Log("playerId not found in data.");
+                }
 
                 // "subServerList" 항목 확인
                 if (jsonObject["data"]["subServerList"] != null && jsonObject["data"]["subServerList"].HasValues)
@@ -265,25 +347,15 @@ public class TcpClientManager : MonoBehaviour
     #region 연결 및 종료 처리
     public IEnumerator StartConnectionCoroutine(string inputIp, int inputPort)
     {
-
-
-        Debug.Log($"StartConnectionCoroutine {inputIp}, {inputPort}");
         // TCP 클라이언트 연결
-        _client = new TcpClient(inputIp, inputPort);
-        _stream = _client.GetStream();
-        _isConnected = true;
-        Debug.Log("서버에 연결되었습니다.");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
+        _client_main = new TcpClient(inputIp, inputPort);
+        _stream_main = _client_main.GetStream();
+
+
+        _isConnected_main = true;
+
         // 서버와 연결 후 초기화 작업
-        SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
-        Debug.Log("서버와 연결 후 초기화 작업 끝");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
+        SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" }, true);
 
         // TCP 데이터 수신 시작
         yield return StartCoroutine(ReceiveFromTCPServerCoroutine());
@@ -297,6 +369,34 @@ public class TcpClientManager : MonoBehaviour
         StartCoroutine(StartConnectionCoroutine(inputIp, inputPort));
     }
 
+    public IEnumerator StartSubConnectionCoroutine(string inputIp, int inputPort)
+    {
+
+        // TCP 클라이언트 연결);
+
+
+        _client_sub = new TcpClient(inputIp, inputPort);
+        _stream_sub = _client_sub.GetStream();
+
+
+        _isConnected_sub = true;
+        // 서버와 연결 후 초기화 작업
+
+        SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" }, false);
+
+
+        // TCP 데이터 수신 시작
+        yield return StartCoroutine(ReceiveFromTCPSubServerCoroutine());
+        //yield return null;
+
+    }
+
+    public void ConnectSubServer(string inputIp, int inputPort)
+    {
+
+        StartCoroutine(StartSubConnectionCoroutine(inputIp, inputPort));
+    }
+
 
 
 
@@ -305,11 +405,14 @@ public class TcpClientManager : MonoBehaviour
     {
         try
         {
-            if (_isConnected)
+            if (_isConnected_main)
             {
-                _isConnected = false;
-                _stream?.Close();
-                _client?.Close();
+                _isConnected_main = false;
+                _isConnected_sub = false;
+                _stream_main?.Close();
+                _client_main?.Close();
+                _stream_sub?.Close();
+                _client_sub?.Close();
                 Debug.Log("서버와의 연결을 종료했습니다.");
             }
             starttoken?.Cancel();

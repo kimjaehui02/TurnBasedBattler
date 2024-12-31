@@ -303,7 +303,7 @@ namespace UDPServer
                 while (asyncToClient != null && asyncToClient.Connected)
                 {
                     await ReceiveFromClientAsync(asyncToClient);
-                    SendToTcpClient(asyncToClient, ConnectionState.Connecting, null);
+                    //SendToTcpClient(asyncToClient, ConnectionState.Connecting, null);
                 }
             }
             catch (Exception ex)

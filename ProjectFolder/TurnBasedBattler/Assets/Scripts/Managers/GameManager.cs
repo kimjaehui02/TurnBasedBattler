@@ -45,8 +45,6 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private TcpClientManager tcpMainClientManager;
     [SerializeField]
-    private TcpClientManager tcpSubClientManager;
-    [SerializeField]
     private UdpClientManager udpClientManager;
     [SerializeField]
     private PlayerInfoManager playerInfoManager;
