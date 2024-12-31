@@ -79,6 +79,8 @@
   <ItemGroup>
     <Compile Include="PlayerConnection.cs" />
     <Compile Include="PlayerManager.cs" />
+    <Compile Include="PlayerState.cs" />
+    <Compile Include="PlayerTransform.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TcpConnection.cs" />

@@ -44,4 +44,10 @@ class PlayerManager
             Console.WriteLine("Player ID not found.");
         }
     }
+
+    public void UpdateTransform()
+    {
+
+    }
+
 }
