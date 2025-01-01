@@ -66,7 +66,9 @@ public class UdpClientManager : MonoBehaviour
 
             string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented, settings);
             Debug.Log($"보내는 JSON: {jsonMessage}");
-            byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
+
+            byte[] data = CompressionManager.CompressJson(jsonMessage);
+            //byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
             udpClient.Send(data, data.Length);
         }
         catch (Exception ex)
@@ -118,7 +120,8 @@ public class UdpClientManager : MonoBehaviour
                 byte[] data = result.Buffer;  // 받은 데이터
                 IPEndPoint remoteEP = result.RemoteEndPoint; // 송신자 정보
 
-                string json = Encoding.UTF8.GetString(data); // UTF-8로 문자열 변환
+                //string json = Encoding.UTF8.GetString(data); // UTF-8로 문자열 변환
+                string json = CompressionManager.DecompressJson(data); // UTF-8로 문자열 변환
                 Debug.Log($"Received data: {json}");
 
                 try

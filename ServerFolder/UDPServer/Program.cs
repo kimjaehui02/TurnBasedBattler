@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using UDPServer;
 
 //using System.Net.Sockets;
 
@@ -40,6 +41,11 @@ class UdpServer
 
     static async Task Main(string[] args)
     {
+/*        JsonCompressionManager testing = new JsonCompressionManager();
+
+        testing.test();*/
+        
+        
         Console.WriteLine("UDP 서버 시작...");
         PlayerManager playerManager = new PlayerManager();
         UDPServer.TcpConnection tcpConnection = new UDPServer.TcpConnection(playerManager);
@@ -73,6 +79,7 @@ class UdpServer
         await Task.WhenAll(tcpTask, serverTask); // 모든 비동기 작업 완료 대기
 
         Console.WriteLine("서버가 종료되었습니다.");
+        
     }
 
     public static (int TcpPort, int UdpPort) FindAvailablePorts()

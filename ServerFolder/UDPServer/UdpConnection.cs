@@ -50,7 +50,8 @@ namespace UDPServer
                 Console.WriteLine($"보내는 JSON: {jsonMessage}");
 
                 // UDP를 통해 클라이언트로 메시지 전송
-                byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
+                //byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
+                byte[] data = JsonCompressionManager.CompressJson(jsonMessage);
                 udpClient.Send(data, data.Length, remoteEP);
             }
             catch (Exception ex)
@@ -73,7 +74,8 @@ namespace UDPServer
                 byte[] data = result.Buffer;  // UdpReceiveResult에서 Buffer 속성으로 데이터 추출
                 IPEndPoint remoteEP = result.RemoteEndPoint;  // 클라이언트의 IP와 포트 번호를 가진 IPEndPoint
 
-                string json = Encoding.UTF8.GetString(data);
+                //string json = Encoding.UTF8.GetString(data);
+                string json = JsonCompressionManager.DecompressJson(data);
 
                 // 수신한 JSON 데이터를 콘솔에 출력
                 Console.WriteLine("Received data: " + json);
@@ -155,6 +157,7 @@ namespace UDPServer
         {
             Console.WriteLine("Handling Data Syncing state...");
             // 데이터 동기화 처리 로직 추가
+
         }
 
         private void HandleDisconnecting(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
