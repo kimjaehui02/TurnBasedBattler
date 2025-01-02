@@ -15,6 +15,9 @@ using UnityEngine.Windows;
 
 public class UdpClientManager : MonoBehaviour
 {
+    [SerializeField]
+    TransformManager transformManager;
+
     #region 통신용 변수들
     //private const string ServerIp = "127.0.0.1"; // 서버 IP
     //private const int ServerPort = 9090; // 서버 포트
@@ -30,9 +33,9 @@ public class UdpClientManager : MonoBehaviour
     #endregion
 
     #region 게임플레이용 변수들
-    public GameObject playerPrefab;  // 플레이어 오브젝트의 프리팹을 에디터에서 드래그 앤 드롭으로 설정
-    private Dictionary<int, GameObject> playerObjects = new Dictionary<int, GameObject>();
-    public GameObject myPlayerObject; // 내 플레이어 오브젝트
+    //public GameObject playerPrefab;  // 플레이어 오브젝트의 프리팹을 에디터에서 드래그 앤 드롭으로 설정
+    //private Dictionary<int, GameObject> playerObjects = new Dictionary<int, GameObject>();
+    //public GameObject myPlayerObject; // 내 플레이어 오브젝트
     #endregion
 
     #region json선언부
@@ -121,27 +124,31 @@ public class UdpClientManager : MonoBehaviour
                 IPEndPoint remoteEP = result.RemoteEndPoint; // 송신자 정보
 
                 //string json = Encoding.UTF8.GetString(data); // UTF-8로 문자열 변환
-                string json = CompressionManager.DecompressJson(data); // UTF-8로 문자열 변환
-                Debug.Log($"Received data: {json}");
 
-                try
+                var json = CompressionManager.DecompressJson(data);
+                Debug.Log($"Received jsondata: {json}");
+
+
+                // JSON 파싱
+                var message = JsonConvert.DeserializeObject<dynamic>(json);
+                if (message != null)
                 {
-                    // JSON 파싱
-                    var message = JsonConvert.DeserializeObject<dynamic>(json);
-                    if (message != null)
-                    {
-                        // 메시지 처리
-                        HandleConnectionState(message);
-                    }
-                    else
-                    {
-                        Debug.Log("Failed to parse JSON.");
-                    }
+                    // 메시지 처리
+                    HandleConnectionState(message);
                 }
-                catch (Exception ex)
+                else
                 {
-                    Debug.Log($"Error parsing JSON: {ex.Message}");
+                    Debug.Log("Failed to parse JSON.");
                 }
+                //try
+                //{
+
+                //}
+                //catch (Exception ex)
+                //{
+                //    Debug.Log($"Error parsing JSON: {ex.Message}");
+                    
+                //}
             }
             else
             {
@@ -192,6 +199,14 @@ public class UdpClientManager : MonoBehaviour
     private void HandleDataSyncing(dynamic message)
     {
         Debug.Log("Handling Data Syncing state...");
+
+        // message가 무엇인지 출력하고 싶다면
+        Debug.Log($"Received allmessage: {message}");
+        Debug.Log($"Received ObjectTransformmessage: {message.data}");
+
+
+
+        //transformManager.OnObjectTransformsReceived2(message.data);
     }
 
     private void HandleDisconnecting(dynamic message)
@@ -245,12 +260,16 @@ public class UdpClientManager : MonoBehaviour
         float currentTime = Time.realtimeSinceStartup;
         if (currentTime - lastSendTime >= sendInterval)
         {
-            SendToUDPServer(ConnectionState.DataSyncing, new
+            Dictionary<int, ObjectTransform> ObjectTransforms = TransformConverter.ConvertGameObjectsToTransforms(GameManager.Instance.gameObjects);
+
+            var message = new
             {
-                positionX = myPlayerObject.transform.position.x,
-                positionY = myPlayerObject.transform.position.y,
-                userID = GameManager.Instance.GetPlayerId(),
-            });
+                PlayerId = GameManager.Instance.GetPlayerId(),
+                data = JsonConvert.SerializeObject(ObjectTransforms, Formatting.Indented)
+            };
+
+
+            SendToUDPServer(ConnectionState.DataSyncing, message);
 
             lastSendTime = currentTime;
         }

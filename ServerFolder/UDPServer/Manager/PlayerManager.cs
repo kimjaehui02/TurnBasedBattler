@@ -27,6 +27,19 @@ class PlayerManager
 
         players.Add(playerId, new PlayerConnection(asyncToClient));
         Console.WriteLine($"Player added with ID: {playerId}");
+        Console.WriteLine($"Player added with ID: {playerId}");
+        Console.WriteLine($"Player added with ID: {playerId}");
+        Console.WriteLine($"Player added with ID: {playerId}");
+        Console.WriteLine($"nextPlayerId with ID: {nextPlayerId}");
+        Console.WriteLine($"nextPlayerId with ID: {nextPlayerId}");
+        Console.WriteLine($"nextPlayerId with ID: {nextPlayerId}");
+        Console.WriteLine($"nextPlayerId with ID: {nextPlayerId}");
+        Console.WriteLine($"players.Count: {players.Count}");
+        Console.WriteLine($"players.Count: {players.Count}");
+        Console.WriteLine($"players.Count: {players.Count}");
+        Console.WriteLine($"players.Count: {players.Count}");
+        Console.WriteLine($"players.Count: {players.Count}");
+
         return playerId;
     }
 
@@ -38,6 +51,14 @@ class PlayerManager
             players.Remove(playerId);
             availablePlayerIds.Enqueue(playerId); // 삭제된 ID를 큐에 추가
             Console.WriteLine($"Player with ID: {playerId} has been removed.");
+            Console.WriteLine($"Player with ID: {playerId} has been removed.");
+            Console.WriteLine($"Player with ID: {playerId} has been removed.");
+            Console.WriteLine($"Player with ID: {playerId} has been removed.");
+            Console.WriteLine($"players.Count: {players.Count}");
+            Console.WriteLine($"players.Count: {players.Count}");
+            Console.WriteLine($"players.Count: {players.Count}");
+            Console.WriteLine($"players.Count: {players.Count}");
+            Console.WriteLine($"players.Count: {players.Count}");
         }
         else
         {

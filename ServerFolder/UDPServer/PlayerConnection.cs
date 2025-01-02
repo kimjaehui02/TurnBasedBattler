@@ -9,7 +9,7 @@ class PlayerConnection
     private TcpClient asyncToClient;
 
     // PlayerTransform 속성 추가
-    public PlayerTransform Transform { get; set; }
+    //public ObjectTransform Transform { get; set; }
 
     // 생성자
     public PlayerConnection(TcpClient asyncToClient)
@@ -17,7 +17,7 @@ class PlayerConnection
         this.asyncToClient = asyncToClient;
 
         // Transform 기본값 초기화
-        Transform = new PlayerTransform(0, 0); // 초기 좌표 (0, 0)으로 설정
+        //Transform = new ObjectTransform(); // 초기 좌표 (0, 0)으로 설정
     }
 
     // asyncToClient에 대한 프로퍼티 (get, set)
@@ -30,6 +30,6 @@ class PlayerConnection
     // ToString 메서드로 디버깅 및 로그용 정보 제공
     public override string ToString()
     {
-        return $"Client Info: {asyncToClient.Client.RemoteEndPoint}, {Transform}";
+        return $"Client Info: {asyncToClient.Client.RemoteEndPoint}, ";
     }
 }

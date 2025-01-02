@@ -8,7 +8,7 @@ using System;
 
 public class JsonCompressionManager : MonoBehaviour
 {
-    public TransformData transferFunction;
+    public TransformManager transferFunction;
 
     // JSON 문자열 압축
     public static byte[] CompressJson(string json)
@@ -93,25 +93,25 @@ public class JsonCompressionManager : MonoBehaviour
         // 테스트할 JSON 문자열
 
 
-        string originalJson = transferFunction.GetTransformsJson();
+        //string originalJson = transferFunction.GetTransformsJson();
 
-        // 압축 전 크기
-        long originalSize = GetOriginalSize(originalJson);
-        Debug.Log($"Original JSON Size: {originalSize} bytes");
+        //// 압축 전 크기
+        //long originalSize = GetOriginalSize(originalJson);
+        //Debug.Log($"Original JSON Size: {originalSize} bytes");
 
-        // 압축 후 크기
-        long compressedSize = GetCompressedSize(originalJson);
-        Debug.Log($"Compressed JSON Size: {compressedSize} bytes");
+        //// 압축 후 크기
+        //long compressedSize = GetCompressedSize(originalJson);
+        //Debug.Log($"Compressed JSON Size: {compressedSize} bytes");
 
-        // 압축 비율 계산
-        double compressionRatio = (double)originalSize / compressedSize;
-        Debug.Log($"Compression Ratio: {compressionRatio:F2}");
+        //// 압축 비율 계산
+        //double compressionRatio = (double)originalSize / compressedSize;
+        //Debug.Log($"Compression Ratio: {compressionRatio:F2}");
 
-        // JSON 압축 해제 (압축된 데이터)
-        byte[] compressedData = CompressJson(originalJson);
-        Debug.Log($"Compressed Data: {BitConverter.ToString(compressedData)}");  // 압축된 데이터를 확인
-        string decompressedJson = DecompressJson(compressedData);
-        Debug.Log($"Decompressed JSON: {decompressedJson}");
+        //// JSON 압축 해제 (압축된 데이터)
+        //byte[] compressedData = CompressJson(originalJson);
+        //Debug.Log($"Compressed Data: {BitConverter.ToString(compressedData)}");  // 압축된 데이터를 확인
+        //string decompressedJson = DecompressJson(compressedData);
+        //Debug.Log($"Decompressed JSON: {decompressedJson}");
     }
 }
 

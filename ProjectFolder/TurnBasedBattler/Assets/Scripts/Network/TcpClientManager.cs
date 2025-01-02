@@ -27,7 +27,7 @@ public class TcpClientManager : MonoBehaviour
     #endregion
 
     #region 게임플레이용 변수들
-    public GameObject myPlayerObject;  // 내 플레이어 오브젝트
+    //public GameObject myPlayerObject;  // 내 플레이어 오브젝트
     #endregion
 
     #region json선언부
@@ -125,6 +125,11 @@ public class TcpClientManager : MonoBehaviour
 
                     // 받은 데이터를 UTF-8 문자열로 변환
                     string json = Encoding.UTF8.GetString(data);
+                    Debug.Log($"json: {json}");
+                    Debug.Log($"json: {json}");
+                    Debug.Log($"json: {json}");
+                    Debug.Log($"json: {json}");
+                    Debug.Log($"json: {json}");
 
                     // JSON 처리
                     try
@@ -194,22 +199,26 @@ public class TcpClientManager : MonoBehaviour
         {
             // JSON을 JObject로 변환
             JObject jsonObject = JObject.Parse(message.ToString());
-
+            Debug.Log($"jsonObject...{jsonObject}");
+            Debug.Log($"jsonObject...{jsonObject}");
+            Debug.Log($"jsonObject...{jsonObject}");
+            Debug.Log($"jsonObject...{jsonObject}");
+            Debug.Log($"jsonObject...{jsonObject}");
             // "data" 항목 확인
             if (jsonObject["data"] != null)
             {
                 // playerId 항목 확인
-                //if (jsonObject["data"]["playerId"] != null)
-                //{
-                //    // playerId 값을 처리
-                //    int playerId = jsonObject["data"]["playerId"].ToObject<int>();
-                //    GameManager.Instance.SetPlayerId(playerId);
-                //    Debug.Log($"playerId found: {playerId}");
-                //}
-                //else
-                //{
-                //    Debug.Log("playerId not found in data.");
-                //}
+                if (jsonObject["data"]["playerId"] != null)
+                {
+                    // playerId 값을 처리
+                    int playerId = jsonObject["data"]["playerId"].ToObject<int>();
+                    GameManager.Instance.SetPlayerId(playerId);
+                    Debug.Log($"playerId found: {playerId}");
+                }
+                else
+                {
+                    Debug.Log("playerId not found in data.");
+                }
 
                 // "subServerList" 항목 확인
                 if (jsonObject["data"]["subServerList"] != null && jsonObject["data"]["subServerList"].HasValues)
@@ -273,13 +282,7 @@ public class TcpClientManager : MonoBehaviour
         _stream = _client.GetStream();
         _isConnected = true;
         Debug.Log("서버에 연결되었습니다.");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
+
         // 서버와 연결 후 초기화 작업
         SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
         Debug.Log("서버와 연결 후 초기화 작업 끝");
@@ -305,11 +308,13 @@ public class TcpClientManager : MonoBehaviour
     {
         try
         {
+            SendToTcpServer(ConnectionState.Disconnecting, new { playerId = GameManager.Instance.GetPlayerId() });
             if (_isConnected)
             {
                 _isConnected = false;
                 _stream?.Close();
                 _client?.Close();
+                
                 Debug.Log("서버와의 연결을 종료했습니다.");
             }
             starttoken?.Cancel();

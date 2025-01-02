@@ -6,17 +6,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using UDPServer.Manager;
 
 namespace UDPServer
 {
     class TcpConnection
     {
         PlayerManager playerManager;
-        public TcpConnection(PlayerManager playerManager)
+        ObjectTransformManager objectTransformManager;
+
+
+        public TcpConnection(PlayerManager playerManager, ObjectTransformManager objectTransformManager)
         {
             this.playerManager = playerManager;
+            this.objectTransformManager = objectTransformManager;
         }
         #region 변수들
+
+        // 동강동강긴급탈출
+        int bytesReadss = -1;
 
         #region 메인서버의 정보들
         // private const string ServerIp = "127.0.0.1";  // 서버 IP
@@ -268,11 +276,12 @@ namespace UDPServer
             Console.WriteLine($"RunServerAsyncToAddClient");
             try
             {
+                int test = 3;
                 while (_listener.Server.IsBound)  // 서버가 꺼지지 않은 이상 계속 반복
                 {
                     TcpClient client = _listener.AcceptTcpClient(); // 연결이 올 때까지 멈춘 상태
-                    Console.WriteLine($"TcpClient client = _listener.AcceptTcpClient(); // 연결이 올 때까지 멈춘 상태");
-                    await RunServerAsyncToClient(client);
+                    test++;
+                    await RunServerAsyncToClient(client, test);
                 }
                 
             }
@@ -291,20 +300,33 @@ namespace UDPServer
         /// </summary>
         /// <param name="asyncToClient">대응시킬 클라이언트를 매개변수로</param>
         /// <returns></returns>
-        public async Task RunServerAsyncToClient(TcpClient asyncToClient)
+        public async Task RunServerAsyncToClient(TcpClient asyncToClient, int test)
         {
             int id = -1;
             try
             {
                 // 플레이어 추가
                 id = playerManager.AddPlayer(asyncToClient);
+                id = test;
+
+
+
+
                 SendToTcpClient(asyncToClient, ConnectionState.Connecting, new { playerId = id });
                 // 클라이언트가 연결되어 있을 동안 데이터를 받음
-                while (asyncToClient != null && asyncToClient.Connected)
+                
+                while (bytesReadss != 0)
                 {
-                    await ReceiveFromClientAsync(asyncToClient);
-                    SendToTcpClient(asyncToClient, ConnectionState.Connecting, null);
+                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+
+                    await ReceiveFromClientAsync(asyncToClient, id);
+                    //SendToTcpClient(asyncToClient, ConnectionState.Connecting, null);
                 }
+
             }
             catch (Exception ex)
             {
@@ -312,6 +334,15 @@ namespace UDPServer
             }
             finally
             {
+                Console.WriteLine($"idididididid: {id}");
+                Console.WriteLine($"idididididid: {id}");
+                Console.WriteLine($"idididididid: {id}");
+                Console.WriteLine($"idididididid: {id}");
+                Console.WriteLine($"idididididid: {id}");
+                Console.WriteLine($"idididididid: {id}");
+                Console.WriteLine($"idididididid: {id}");
+                Console.WriteLine($"idididididid: {id}");
+
                 // 클라이언트 연결 종료 후, 플레이어 삭제
                 if (id != -1)
                 {
@@ -328,7 +359,7 @@ namespace UDPServer
         /// </summary>
         /// <param name="asyncToClient">신호를 받을 클라이언트</param>
         /// <returns></returns>
-        public async Task ReceiveFromClientAsync(TcpClient asyncToClient)
+        public async Task ReceiveFromClientAsync(TcpClient asyncToClient, int id)
         {
             Console.WriteLine("ReceiveFromTCPServerAsync()");
 
@@ -344,6 +375,19 @@ namespace UDPServer
 
                 // 데이터를 비동기적으로 수신
                 int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);  // 비동기적으로 데이터 수신
+                bytesReadss = bytesRead;
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
+                Console.WriteLine($"bytesRead {bytesRead}");
 
 
                 if (bytesRead > 0)
@@ -360,7 +404,7 @@ namespace UDPServer
                         var message = JsonConvert.DeserializeObject<dynamic>(json);
                         if (message != null)
                         {
-                            HandleConnectionStateToClient(message);  // 상태 처리
+                            HandleConnectionStateToClient(message, id);  // 상태 처리
                         }
                         else
                         {
@@ -384,7 +428,7 @@ namespace UDPServer
 
         // 3. 분배
         #region 분배들
-        private void HandleConnectionStateToClient(dynamic message)
+        private void HandleConnectionStateToClient(dynamic message, int id)
         {
             string connectionState = message.connectionState;
 

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UDPServer;
+using UDPServer.Manager;
 
 //using System.Net.Sockets;
 
@@ -48,8 +49,9 @@ class UdpServer
         
         Console.WriteLine("UDP 서버 시작...");
         PlayerManager playerManager = new PlayerManager();
-        UDPServer.TcpConnection tcpConnection = new UDPServer.TcpConnection(playerManager);
-        UDPServer.UdpConnection udpConnection = new UDPServer.UdpConnection(playerManager);
+        ObjectTransformManager objectTransformManager = new ObjectTransformManager();
+        UDPServer.TcpConnection tcpConnection = new UDPServer.TcpConnection(playerManager, objectTransformManager);
+        UDPServer.UdpConnection udpConnection = new UDPServer.UdpConnection(playerManager, objectTransformManager);
 
         (int tcpPort, int udpPort) = FindAvailablePorts();
         Console.WriteLine($"tcpPort : {tcpPort}, udpPort : {udpPort}");

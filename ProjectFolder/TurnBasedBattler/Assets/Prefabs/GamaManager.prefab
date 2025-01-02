@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7406478669876417666}
   - component: {fileID: 3753316073567834618}
   - component: {fileID: 526290827549366058}
+  - component: {fileID: 4984813895993222348}
   m_Layer: 0
   m_Name: GamaManager
   m_TagString: Untagged
@@ -52,6 +53,8 @@ MonoBehaviour:
   tcpSubClientManager: {fileID: 7406478669876417666}
   udpClientManager: {fileID: 3753316073567834618}
   playerInfoManager: {fileID: 526290827549366058}
+  one: {fileID: 0}
+  two: {fileID: 0}
   SubServerIp: 127.0.0.1
   SubServerPort: 9090
   UdpServerIp: 127.0.0.1
@@ -94,6 +97,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d53a010e8a4e38c46be4f2f3387f499f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  transformManager: {fileID: 4984813895993222348}
   isConnected: 0
   playerPrefab: {fileID: 0}
   myPlayerObject: {fileID: 0}
@@ -109,3 +113,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06cdc66c7282ad44ca490ddb461f14a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  PlayerId: 0
+--- !u!114 &4984813895993222348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7194397956107102295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f49557ccb0b03a84fb1d734b8bb79acc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 0}

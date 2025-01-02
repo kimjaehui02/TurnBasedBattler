@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -51,6 +52,13 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private PlayerInfoManager playerInfoManager;
 
+    //[SerializeField]
+    public Dictionary<int, GameObject> gameObjects = new Dictionary<int, GameObject>();
+    public Dictionary<int, Dictionary<int, GameObject>> gameObjects2 = new Dictionary<int, Dictionary<int, GameObject>>();
+
+    public GameObject one;
+    public GameObject two;
+
     public const string ServerIp = "127.0.0.1";  // 서버 IP
     public const int ServerPort = 8080;  // 서버 포트
 
@@ -83,11 +91,33 @@ public class GameManager : MonoBehaviour
         return playerInfoManager.GetPlayerId();
     }
 
+    public void updateObjects()
+    {
+        // gameObjects2에 gameObjects를 내 ID와 함께 넣기
+        int playerId = GetPlayerId(); // 현재 유저 ID를 가져옴
+        if (!gameObjects2.ContainsKey(playerId))
+        {
+            gameObjects2[playerId] = new Dictionary<int, GameObject>();
+        }
+
+        foreach (var obj in gameObjects)
+        {
+            gameObjects2[playerId][obj.Key] = obj.Value;
+        }
+    }
+
     // 게임 시작 시 호출되는 메서드
     private void Start()
     {
         Application.runInBackground = true;
+        gameObjects.Add(0, one);
+        gameObjects.Add(1, two);
+
+
+
         ConnectMainServer();
+
+
     }
 
 

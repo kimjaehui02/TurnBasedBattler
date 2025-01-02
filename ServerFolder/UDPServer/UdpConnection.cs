@@ -5,15 +5,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using UDPServer.Manager;
 
 namespace UDPServer
 {
     class UdpConnection
     {
         PlayerManager playerManager;
-        public UdpConnection(PlayerManager playerManager)
+        ObjectTransformManager objectTransformManager;
+        public UdpConnection(PlayerManager playerManager, ObjectTransformManager objectTransformManager)
         {
             this.playerManager = playerManager;
+            this.objectTransformManager = objectTransformManager;
         }
 
         #region json선언부
@@ -158,6 +161,32 @@ namespace UDPServer
             Console.WriteLine("Handling Data Syncing state...");
             // 데이터 동기화 처리 로직 추가
 
+            Console.WriteLine($"message.data : {message.data}");
+            Console.WriteLine($"message.data : {message.data}");
+            Console.WriteLine($"message.data : {message.data}");
+            Console.WriteLine($"message.data : {message.data}");
+            objectTransformManager.UpdateObjectTransformsForPlayer(message.data);
+            Console.WriteLine("objectTransformManager.UpdateObjectTransformsForPlayer(message.data);");
+
+            dynamic allObject = objectTransformManager.ToAllJson();
+            Console.WriteLine("dynamic allObject = objectTransformManager.ToAllJson();");
+
+            Console.WriteLine($"allObject");
+            Console.WriteLine($"allObject");
+            Console.WriteLine($"allObject");
+            Console.WriteLine($"allObject");
+            //Console.WriteLine($"\n{allObject}\n");
+
+            Console.WriteLine($"allObject");
+            Console.WriteLine($"allObject");
+            Console.WriteLine($"allObject");
+            Console.WriteLine($"allObject");
+
+
+            Console.WriteLine($"allObject : {allObject}");
+            Console.WriteLine($"allObject : {allObject}");
+            Console.WriteLine($"allObject : {allObject}");
+            SendToUDPClient(udpClient, remoteEP, ConnectionState.DataSyncing, allObject);
         }
 
         private void HandleDisconnecting(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
@@ -166,10 +195,10 @@ namespace UDPServer
             Console.WriteLine($"message  ...{message}");
             // 연결 종료 처리 로직 추가
             // message.data.playerId가 실제로 int로 변환되는지 확인
-            int playerId = Convert.ToInt32(message.data.playerId);  // 강제 형변환
+            //int playerId = Convert.ToInt32(message.data.playerId);  // 강제 형변환
 
             // 연결 종료 처리 로직
-            playerManager.DeletePlayer(playerId);
+            //playerManager.DeletePlayer(playerId);
         }
 
         private void HandleError(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
