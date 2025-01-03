@@ -27,11 +27,7 @@ namespace UDPServer.Manager
         {
             if (objectTransforms == null)
             {
-                Console.WriteLine("objectTransforms is null");
-                Console.WriteLine("objectTransforms is null");
-                Console.WriteLine("objectTransforms is null");
-                Console.WriteLine("objectTransforms is null");
-                Console.WriteLine("objectTransforms is null");
+
                 return string.Empty;
             }
 
@@ -41,10 +37,7 @@ namespace UDPServer.Manager
                 string jsonString = JsonConvert.SerializeObject(objectTransforms, Formatting.Indented);
 
                 // 직렬화된 JSON 출력
-                Console.WriteLine("objectTransforms is asdf");
-                Console.WriteLine("objectTransforms is asdf");
-                Console.WriteLine("objectTransforms is asdf");
-                Console.WriteLine("objectTransforms is asdf");
+
                 Console.WriteLine(jsonString);
             }
             catch (Exception ex)
@@ -68,19 +61,36 @@ namespace UDPServer.Manager
             // 해당 playerId에 대한 데이터 갱신
             objectTransforms[id] = playerTransforms;
 
-            Console.WriteLine($"Player {id}의 objectTransforms가 업데이트되었습니다.");
-            Console.WriteLine($"결과물입니다");
-            Console.WriteLine($"결과물입니다");
-            Console.WriteLine($"결과물입니다");
-            Console.WriteLine($"결과물입니다");
-            Console.WriteLine($"\n{ToAllJson()}\n");
 
-            Console.WriteLine($"결과물입니다");
-            Console.WriteLine($"결과물입니다");
-            Console.WriteLine($"결과물입니다");
-            Console.WriteLine($"결과물입니다");
         }
 
+        public void DeleteUserData(int userId)
+        {
+            foreach (var outerKey in objectTransforms.Keys)
+            {
+                Console.WriteLine($"Outer Key: {outerKey}");
+
+                // 내부 Dictionary에서의 모든 키 값 출력
+                foreach (var innerKey in objectTransforms[outerKey].Keys)
+                {
+                    Console.WriteLine($"    Inner Key: {innerKey}");
+                }
+            }
+
+            //
+
+            // userId에 해당하는 데이터가 존재하는지 확인
+            if (objectTransforms.ContainsKey(userId))
+            {
+                // 해당 userId의 데이터를 삭제
+                objectTransforms.Remove(userId);
+                Console.WriteLine($"User {userId}의 데이터가 삭제되었습니다.");
+            }
+            else
+            {
+                Console.WriteLine($"User {userId}의 데이터가 존재하지 않습니다.");
+            }
+        }
 
 
     }

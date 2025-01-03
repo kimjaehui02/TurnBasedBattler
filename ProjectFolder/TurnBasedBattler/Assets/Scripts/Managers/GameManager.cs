@@ -56,6 +56,8 @@ public class GameManager : MonoBehaviour
     public Dictionary<int, GameObject> gameObjects = new Dictionary<int, GameObject>();
     public Dictionary<int, Dictionary<int, GameObject>> gameObjects2 = new Dictionary<int, Dictionary<int, GameObject>>();
 
+    public List<GameObject> ServerObjects;
+
     public GameObject one;
     public GameObject two;
 

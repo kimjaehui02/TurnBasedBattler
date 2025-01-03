@@ -19,4 +19,9 @@ public class PlayerInfoManager : MonoBehaviour
     {
         return PlayerId;
     }
+
+    private void Awake()
+    {
+        PlayerId = -1;
+    }
 }

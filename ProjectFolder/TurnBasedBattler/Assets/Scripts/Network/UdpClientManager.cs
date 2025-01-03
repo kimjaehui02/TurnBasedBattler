@@ -25,7 +25,7 @@ public class UdpClientManager : MonoBehaviour
     //public int myId = -1;  // 내 id, 서버에서 받아온 값으로 설정
     CancellationTokenSource cancellationTokenSource;
 
-    private const float sendInterval = 1f; // 좌표 전송 간격
+    private const float sendInterval = 0.02f; // 좌표 전송 간격
     private float lastSendTime = 0f;
 
     [SerializeField]
@@ -202,11 +202,18 @@ public class UdpClientManager : MonoBehaviour
 
         // message가 무엇인지 출력하고 싶다면
         Debug.Log($"Received allmessage: {message}");
+
+        Debug.Log($"Raw message data: {message.data.GetType()}");
         Debug.Log($"Received ObjectTransformmessage: {message.data}");
+        string jsonData = (message.data as JValue)?.ToString();
+
+        Dictionary<string, Dictionary<string, ObjectTransform>> pairs = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, ObjectTransform>>>(jsonData);
+        Debug.Log($"Successfully deserialized data: {pairs}");
+
+        //Dictionary<string, Dictionary<string, ObjectTransform>> pairs = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, ObjectTransform>>>(message.data);
 
 
-
-        //transformManager.OnObjectTransformsReceived2(message.data);
+        transformManager.OnObjectTransformsReceived2(pairs);
     }
 
     private void HandleDisconnecting(dynamic message)
@@ -254,6 +261,21 @@ public class UdpClientManager : MonoBehaviour
     {
         if(isConnected == false)
         {
+            Debug.Log("(isConnected == false)");
+            Debug.Log("(isConnected == false)");
+            Debug.Log("(isConnected == false)");
+            Debug.Log("(isConnected == false)");
+
+            return;
+        }
+
+        if (GameManager.Instance.GetPlayerId() == -1)
+        {
+            Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
+            Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
+            Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
+            Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
+
             return;
         }
 

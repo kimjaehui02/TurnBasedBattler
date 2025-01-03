@@ -35,7 +35,7 @@ namespace UDPServer
         // 서버에서 클라이언트로 데이터를 송신하는 메서드
         public void SendToUDPClient(UdpClient udpClient, IPEndPoint remoteEP, ConnectionState connectionState, object messageData)
         {
-            Console.WriteLine($"SendToUDPClient의 보내는 remoteEP: {remoteEP}");
+            //Console.WriteLine($"SendToUDPClient의 보내는 remoteEP: {remoteEP}");
 
             try
             {
@@ -50,7 +50,7 @@ namespace UDPServer
                 string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented);
 
                 // 디버깅용으로 JSON 출력
-                Console.WriteLine($"보내는 JSON: {jsonMessage}");
+                //Console.WriteLine($"보내는 JSON: {jsonMessage}");
 
                 // UDP를 통해 클라이언트로 메시지 전송
                 //byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
@@ -68,7 +68,7 @@ namespace UDPServer
         // 클라이언트로부터 데이터를 수신하는 메서드
         public async Task ReceiveFromUDPClient(UdpClient udpServer)
         {
-            Console.WriteLine($"ReceiveFromUDPClient시작점 : ");
+            //Console.WriteLine($"ReceiveFromUDPClient시작점 : ");
 
             try
             {
@@ -81,13 +81,13 @@ namespace UDPServer
                 string json = JsonCompressionManager.DecompressJson(data);
 
                 // 수신한 JSON 데이터를 콘솔에 출력
-                Console.WriteLine("Received data: " + json);
+                //Console.WriteLine("Received data: " + json);
 
                 // JSON 문자열을 Newtonsoft.Json으로 처리
                 try
                 {
                     var message = JsonConvert.DeserializeObject<dynamic>(json);
-                    Console.WriteLine($"ReceiveFromUDPClient트라이성공 message : {message}");
+                    //Console.WriteLine($"ReceiveFromUDPClient트라이성공 message : {message}");
 
                     if (message != null)
                     {
@@ -118,11 +118,11 @@ namespace UDPServer
         {
             string connectionState = message.connectionState;
 
-            Console.WriteLine($"HandleConnectionState : {connectionState}");
-            Console.WriteLine($"HandleConnectionState : {connectionState}");
-            Console.WriteLine($"HandleConnectionState : {connectionState}");
+            //Console.WriteLine($"HandleConnectionState : {connectionState}");
+            //Console.WriteLine($"HandleConnectionState : {connectionState}");
+            //Console.WriteLine($"HandleConnectionState : {connectionState}");
 
-            Console.WriteLine($"HandleConnectionState의 보내는 remoteEP: {remoteEP}");
+            //Console.WriteLine($"HandleConnectionState의 보내는 remoteEP: {remoteEP}");
             switch (connectionState)
             {
                 case "Connecting":
@@ -161,31 +161,31 @@ namespace UDPServer
             Console.WriteLine("Handling Data Syncing state...");
             // 데이터 동기화 처리 로직 추가
 
-            Console.WriteLine($"message.data : {message.data}");
-            Console.WriteLine($"message.data : {message.data}");
-            Console.WriteLine($"message.data : {message.data}");
-            Console.WriteLine($"message.data : {message.data}");
+            //Console.WriteLine($"message.data : {message.data}");
+            //Console.WriteLine($"message.data : {message.data}");
+            //Console.WriteLine($"message.data : {message.data}");
+            //Console.WriteLine($"message.data : {message.data}");
             objectTransformManager.UpdateObjectTransformsForPlayer(message.data);
-            Console.WriteLine("objectTransformManager.UpdateObjectTransformsForPlayer(message.data);");
+            //Console.WriteLine("objectTransformManager.UpdateObjectTransformsForPlayer(message.data);");
 
             dynamic allObject = objectTransformManager.ToAllJson();
-            Console.WriteLine("dynamic allObject = objectTransformManager.ToAllJson();");
+            //Console.WriteLine("dynamic allObject = objectTransformManager.ToAllJson();");
 
-            Console.WriteLine($"allObject");
-            Console.WriteLine($"allObject");
-            Console.WriteLine($"allObject");
-            Console.WriteLine($"allObject");
+            //Console.WriteLine($"allObject");
+            //Console.WriteLine($"allObject");
+            //Console.WriteLine($"allObject");
+            //Console.WriteLine($"allObject");
             //Console.WriteLine($"\n{allObject}\n");
 
-            Console.WriteLine($"allObject");
-            Console.WriteLine($"allObject");
-            Console.WriteLine($"allObject");
-            Console.WriteLine($"allObject");
+            //Console.WriteLine($"allObject");
+            //Console.WriteLine($"allObject");
+            //Console.WriteLine($"allObject");
+            //Console.WriteLine($"allObject");
 
 
-            Console.WriteLine($"allObject : {allObject}");
-            Console.WriteLine($"allObject : {allObject}");
-            Console.WriteLine($"allObject : {allObject}");
+            //Console.WriteLine($"allObject : {allObject}");
+            //Console.WriteLine($"allObject : {allObject}");
+            //Console.WriteLine($"allObject : {allObject}");
             SendToUDPClient(udpClient, remoteEP, ConnectionState.DataSyncing, allObject);
         }
 
@@ -213,13 +213,13 @@ namespace UDPServer
         // 서버 실행 메서드
         public async Task RunServerAsync(UdpClient udpServer)
         {
-            Console.WriteLine($"1. RunServerAsync시작지점 : ");
+            //Console.WriteLine($"1. RunServerAsync시작지점 : ");
             try
             {
-                Console.WriteLine($"2. try : ");
+                //Console.WriteLine($"2. try : ");
                 while (true)
                 {
-                    Console.WriteLine($"3. while (!token.IsCancellationRequested) : ");
+                    //Console.WriteLine($"3. while (!token.IsCancellationRequested) : ");
                     // 클라이언트로부터 데이터 수신
                     //UdpReceiveResult receivedResult = await udpServer.ReceiveAsync();
 
@@ -235,7 +235,7 @@ namespace UDPServer
             {
                 Console.WriteLine($"서버 오류 발생: {ex.Message}");
             }
-            Console.WriteLine($"4. RunServerAsync종료지점 : ");
+            //Console.WriteLine($"4. RunServerAsync종료지점 : ");
         }
 
         #endregion
@@ -245,7 +245,7 @@ namespace UDPServer
         public async Task StartConnection(string ServerIp, int ServerPort, int port)
         {
             UdpClient udpServer = new UdpClient(port); // 서버 포트 지정
-            Console.WriteLine("UdpClient udpServer = new UdpClient(Port); // 서버 포트 지정");
+            //Console.WriteLine("UdpClient udpServer = new UdpClient(Port); // 서버 포트 지정");
 
             await RunServerAsync(udpServer);
         }

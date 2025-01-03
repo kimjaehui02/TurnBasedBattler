@@ -102,13 +102,13 @@ namespace UDPServer
         // 1. 런
         public async Task RunServerAsync()
         {
-            Console.WriteLine("public async Task RunServerAsync()");
+            //Console.WriteLine("public async Task RunServerAsync()");
             try
             {
                 // 클라이언트가 연결되어 있을 때만 계속 데이터 수신
                 while (_client?.Connected ?? false)
                 {
-                    Console.WriteLine("while (_client?.Connected ?? false)");
+                    //Console.WriteLine("while (_client?.Connected ?? false)");
                     // 데이터를 비동기적으로 수신
                     await ReceiveFromTCPServerAsync();
                 }
@@ -117,7 +117,7 @@ namespace UDPServer
             {
                 Console.WriteLine($"서버 실행 중 오류 발생: {ex.Message}");
             }
-            Console.WriteLine("public async Task RunServerAsync() END");
+            //Console.WriteLine("public async Task RunServerAsync() END");
         }
 
         // 2. 리시브
@@ -127,15 +127,15 @@ namespace UDPServer
         /// <returns></returns>
         public async Task ReceiveFromTCPServerAsync()
         {
-            Console.WriteLine("ReceiveFromTCPServerAsync()");
+            //Console.WriteLine("ReceiveFromTCPServerAsync()");
 
             byte[] buffer = new byte[1024];
-            Console.WriteLine("byte[] buffer = new byte[1024];");
+            //Console.WriteLine("byte[] buffer = new byte[1024];");
             try
             {
-                Console.WriteLine("try");
+                //Console.WriteLine("try");
                 int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length); // 비동기적으로 데이터 수신
-                Console.WriteLine("int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length); // 비동기적으로 데이터 수신");
+                //Console.WriteLine("int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length); // 비동기적으로 데이터 수신");
                 if (bytesRead > 0)
                 {
                     byte[] data = new byte[bytesRead];
@@ -272,25 +272,41 @@ namespace UDPServer
         /// <returns></returns>
         public async Task RunServerAsyncToAddClient()
         {
-            Console.WriteLine("public async Task RunServerAsyncToAddClient()");
-            Console.WriteLine($"RunServerAsyncToAddClient");
+            //Console.WriteLine("public async Task RunServerAsyncToAddClient()");
+            //Console.WriteLine($"RunServerAsyncToAddClient");
             try
             {
-                int test = 3;
+                // 모든 클라이언트와의 작업을 추적할 Task 리스트
+                List<Task> clientTasks = new List<Task>();
+
                 while (_listener.Server.IsBound)  // 서버가 꺼지지 않은 이상 계속 반복
                 {
+
                     TcpClient client = _listener.AcceptTcpClient(); // 연결이 올 때까지 멈춘 상태
-                    test++;
-                    await RunServerAsyncToClient(client, test);
+
+                    Console.WriteLine($"새로운 신호 도찪!!!!{client}");
+                    Console.WriteLine($"새로운 신호 도찪!!!!{client}");
+                    Console.WriteLine($"새로운 신호 도찪!!!!{client}");
+                    Console.WriteLine($"새로운 신호 도찪!!!!{client}");
+                    Console.WriteLine($"새로운 신호 도찪!!!!{client}");
+                    Console.WriteLine($"새로운 신호 도찪!!!!{client}");
+                    Console.WriteLine($"새로운 신호 도찪!!!!{client}");
+
+
+                    Task clientTask = RunServerAsyncToClient(client);
+                    clientTasks.Add(clientTask);
                 }
-                
+
+                await Task.WhenAll(clientTasks);
+
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생: {ex.Message}");
             }
-            
 
+            
         }
 
         // 1. 런
@@ -300,28 +316,34 @@ namespace UDPServer
         /// </summary>
         /// <param name="asyncToClient">대응시킬 클라이언트를 매개변수로</param>
         /// <returns></returns>
-        public async Task RunServerAsyncToClient(TcpClient asyncToClient, int test)
+        public async Task RunServerAsyncToClient(TcpClient asyncToClient)
         {
             int id = -1;
             try
             {
                 // 플레이어 추가
                 id = playerManager.AddPlayer(asyncToClient);
-                id = test;
+                //id = test;
 
 
+                Console.WriteLine($"playerManager id: {id}");
+                //Console.WriteLine($"보내지는 id: {id}");
+                //Console.WriteLine($"보내지는 id: {id}");
+                //Console.WriteLine($"보내지는 id: {id}");
+                //Console.WriteLine($"보내지는 id: {id}");
 
 
                 SendToTcpClient(asyncToClient, ConnectionState.Connecting, new { playerId = id });
                 // 클라이언트가 연결되어 있을 동안 데이터를 받음
-                
+
+                bytesReadss = -1;
                 while (bytesReadss != 0)
                 {
-                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
-                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
-                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
-                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
-                    Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+                    //Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+                    //Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+                    //Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+                    //Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
+                    //Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
 
                     await ReceiveFromClientAsync(asyncToClient, id);
                     //SendToTcpClient(asyncToClient, ConnectionState.Connecting, null);
@@ -334,19 +356,22 @@ namespace UDPServer
             }
             finally
             {
-                Console.WriteLine($"idididididid: {id}");
-                Console.WriteLine($"idididididid: {id}");
-                Console.WriteLine($"idididididid: {id}");
-                Console.WriteLine($"idididididid: {id}");
-                Console.WriteLine($"idididididid: {id}");
-                Console.WriteLine($"idididididid: {id}");
-                Console.WriteLine($"idididididid: {id}");
-                Console.WriteLine($"idididididid: {id}");
+ 
 
                 // 클라이언트 연결 종료 후, 플레이어 삭제
                 if (id != -1)
                 {
+                    //id--;
+                    objectTransformManager.DeleteUserData(id);
                     playerManager.DeletePlayer(id);
+
+                    Console.WriteLine($"종료종료종료종료종료종료종료종료종료종료종료종료");
+                    Console.WriteLine($"종료종료종료종료종료종료종료종료종료종료종료종료");
+                    Console.WriteLine($"종료종료종료종료종료종료종료종료종료종료종료종료");
+                    Console.WriteLine($"종료종료종료종료종료종료종료종료종료종료종료종료");
+                    Console.WriteLine($"종료종료종료종료종료종료종료종료종료종료종료종료");
+
+
                 }
             }
         }
@@ -361,7 +386,7 @@ namespace UDPServer
         /// <returns></returns>
         public async Task ReceiveFromClientAsync(TcpClient asyncToClient, int id)
         {
-            Console.WriteLine("ReceiveFromTCPServerAsync()");
+            //Console.WriteLine("ReceiveFromTCPServerAsync()");
 
             byte[] buffer = new byte[1024];
 
@@ -376,18 +401,7 @@ namespace UDPServer
                 // 데이터를 비동기적으로 수신
                 int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);  // 비동기적으로 데이터 수신
                 bytesReadss = bytesRead;
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
-                Console.WriteLine($"bytesRead {bytesRead}");
+
 
 
                 if (bytesRead > 0)
