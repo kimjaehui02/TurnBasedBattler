@@ -24,7 +24,7 @@ namespace UDPServer
         #region 변수들
 
         // 동강동강긴급탈출
-        int bytesReadss = -1;
+        //int bytesReadss = -1;
 
         #region 메인서버의 정보들
         // private const string ServerIp = "127.0.0.1";  // 서버 IP
@@ -336,8 +336,9 @@ namespace UDPServer
                 SendToTcpClient(asyncToClient, ConnectionState.Connecting, new { playerId = id });
                 // 클라이언트가 연결되어 있을 동안 데이터를 받음
 
-                bytesReadss = -1;
-                while (bytesReadss != 0)
+                ClientState data = new ClientState();
+                data.SetBytesRead(-1);
+                while (data.GetBytesRead() != 0)
                 {
                     //Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
                     //Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
@@ -345,7 +346,7 @@ namespace UDPServer
                     //Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
                     //Console.WriteLine($"0. 런 에드 클라이언트 중 오류 발생???: {asyncToClient.Connected}");
 
-                    await ReceiveFromClientAsync(asyncToClient, id);
+                    await ReceiveFromClientAsync(asyncToClient, id, data);
                     //SendToTcpClient(asyncToClient, ConnectionState.Connecting, null);
                 }
 
@@ -384,7 +385,7 @@ namespace UDPServer
         /// </summary>
         /// <param name="asyncToClient">신호를 받을 클라이언트</param>
         /// <returns></returns>
-        public async Task ReceiveFromClientAsync(TcpClient asyncToClient, int id)
+        public async Task ReceiveFromClientAsync(TcpClient asyncToClient, int id, ClientState dataa)
         {
             //Console.WriteLine("ReceiveFromTCPServerAsync()");
 
@@ -400,7 +401,7 @@ namespace UDPServer
 
                 // 데이터를 비동기적으로 수신
                 int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);  // 비동기적으로 데이터 수신
-                bytesReadss = bytesRead;
+                dataa.SetBytesRead(bytesRead);
 
 
 
@@ -550,4 +551,23 @@ namespace UDPServer
 
     }
     
+}
+public class ClientState
+{
+    private int BytesRead;
+
+    public ClientState()
+    {
+        BytesRead = 0;
+    }
+
+    public int GetBytesRead()
+    {
+        return BytesRead;
+    }
+
+    public void SetBytesRead(int BytesRead)
+    {
+        this.BytesRead = BytesRead;
+    }
 }

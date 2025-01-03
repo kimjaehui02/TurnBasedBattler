@@ -36,10 +36,10 @@ class PlayerManager
 
         players.Add(playerId, new PlayerConnection(asyncToClient));
 
-        Console.WriteLine($"nuber of Player ID {players.Count}.");
-        Console.WriteLine($"nuber of Player ID {players.Count}.");
-        Console.WriteLine($"nuber of Player ID {players.Count}.");
-        Console.WriteLine($"nuber of Player ID {players.Count}.");
+        //Console.WriteLine($"nuber of Player ID {players.Count}.");
+        //Console.WriteLine($"nuber of Player ID {players.Count}.");
+        //Console.WriteLine($"nuber of Player ID {players.Count}.");
+        //Console.WriteLine($"nuber of Player ID {players.Count}.");
 
 
         return playerId;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -108,7 +109,7 @@ namespace UDPServer
             {
                 Console.WriteLine($"Error receiving data: {ex.Message}");
             }
-            Console.WriteLine($"ReceiveFromUDPClient종료지점 : ");
+            //Console.WriteLine($"ReceiveFromUDPClient종료지점 : ");
         }
         #endregion
 
@@ -152,13 +153,13 @@ namespace UDPServer
             Console.WriteLine("Handling Connecting state...");
             // 여기에서 플레이어 연결 처리 로직 추가
             //int id = playerManager.AddPlayer(remoteEP);
-            Console.WriteLine($"HandleConnecting의 보내는 remoteEP: {remoteEP}");
+            //Console.WriteLine($"HandleConnecting의 보내는 remoteEP: {remoteEP}");
             //SendToUDPClient(udpClient, remoteEP, ConnectionState.Connecting, new { playerId = 0 });
         }
 
         private void HandleDataSyncing(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
         {
-            Console.WriteLine("Handling Data Syncing state...");
+            //Console.WriteLine("Handling Data Syncing state...");
             // 데이터 동기화 처리 로직 추가
 
             //Console.WriteLine($"message.data : {message.data}");
@@ -187,18 +188,21 @@ namespace UDPServer
             //Console.WriteLine($"allObject : {allObject}");
             //Console.WriteLine($"allObject : {allObject}");
             SendToUDPClient(udpClient, remoteEP, ConnectionState.DataSyncing, allObject);
+            //Console.WriteLine("SendToUDPClient(udpClient, remoteEP, ConnectionState.DataSyncing, allObject);");
+
         }
 
         private void HandleDisconnecting(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
         {
             Console.WriteLine("Handling Disconnecting state...");
-            Console.WriteLine($"message  ...{message}");
+            //Console.WriteLine($"message  ...{message}");
             // 연결 종료 처리 로직 추가
             // message.data.playerId가 실제로 int로 변환되는지 확인
             //int playerId = Convert.ToInt32(message.data.playerId);  // 강제 형변환
 
             // 연결 종료 처리 로직
             //playerManager.DeletePlayer(playerId);
+
         }
 
         private void HandleError(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
@@ -216,19 +220,31 @@ namespace UDPServer
             //Console.WriteLine($"1. RunServerAsync시작지점 : ");
             try
             {
+                /*List<Task> clientTasks = new List<Task>();
+                int maxConcurrentTasks = 4;*/
                 //Console.WriteLine($"2. try : ");
                 while (true)
                 {
-                    //Console.WriteLine($"3. while (!token.IsCancellationRequested) : ");
-                    // 클라이언트로부터 데이터 수신
-                    //UdpReceiveResult receivedResult = await udpServer.ReceiveAsync();
+                    // 여러 비동기 작업을 동시에 처리
+                    /*                    if (clientTasks.Count < maxConcurrentTasks)  // 최대 동시 실행 작업 수가 되지 않으면
+                                        {
+                                            Task receiveTask = ReceiveFromUDPClient(udpServer);
+                                            clientTasks.Add(receiveTask);
+                                        }
 
-                    // 수신한 데이터 출력
-                    //string receivedMessage = Encoding.UTF8.GetString(receivedResult.Buffer);
+                                        // 비동기 작업들이 완료될 때까지 기다리되, 동시 실행되는 작업 수를 제한
+                                        if (clientTasks.Count >= maxConcurrentTasks)
+                                        {
+                                            // 하나의 작업이 완료될 때까지 기다리고, 완료된 작업을 처리
+                                            Task completedTask = await Task.WhenAny(clientTasks);
+                                            clientTasks.Remove(completedTask);  // 완료된 작업은 리스트에서 제거
+                                        }
+                    */
 
-
-                    // 수신한 데이터를 세부적으로 처리
+                    /*var serverTask1 = Task.Run(() => ReceiveFromUDPClient(udpServer));
+                    var serverTask2 = Task.Run(() => ReceiveFromUDPClient(udpServer));*/
                     await ReceiveFromUDPClient(udpServer);
+                    //await Task.WhenAll(serverTask1, serverTask2);
                 }
             }
             catch (Exception ex)
