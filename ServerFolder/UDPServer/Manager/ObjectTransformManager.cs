@@ -51,7 +51,7 @@ namespace UDPServer.Manager
         }
 
         private static readonly object lockObject = new object();
-        public void UpdateObjectTransformsForPlayer(dynamic message)
+        public void UpdateObjectTransformsForPlayer(in dynamic message)
         {
             lock (lockObject)
             {

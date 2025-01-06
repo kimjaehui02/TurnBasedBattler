@@ -62,9 +62,6 @@ class PlayerManager
         }
     }
 
-    public void UpdateTransform()
-    {
 
-    }
 
 }

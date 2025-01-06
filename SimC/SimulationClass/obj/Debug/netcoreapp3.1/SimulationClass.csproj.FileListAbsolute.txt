@@ -1,0 +1,16 @@
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\bin\Debug\netcoreapp3.1\SimulationClass.exe
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\bin\Debug\netcoreapp3.1\SimulationClass.deps.json
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\bin\Debug\netcoreapp3.1\SimulationClass.runtimeconfig.json
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\bin\Debug\netcoreapp3.1\SimulationClass.runtimeconfig.dev.json
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\bin\Debug\netcoreapp3.1\SimulationClass.dll
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\bin\Debug\netcoreapp3.1\SimulationClass.pdb
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\bin\Debug\netcoreapp3.1\Newtonsoft.Json.dll
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\obj\Debug\netcoreapp3.1\SimulationClass.csproj.AssemblyReference.cache
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\obj\Debug\netcoreapp3.1\SimulationClass.GeneratedMSBuildEditorConfig.editorconfig
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\obj\Debug\netcoreapp3.1\SimulationClass.AssemblyInfoInputs.cache
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\obj\Debug\netcoreapp3.1\SimulationClass.AssemblyInfo.cs
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\obj\Debug\netcoreapp3.1\SimulationClass.csproj.CoreCompileInputs.cache
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\obj\Debug\netcoreapp3.1\SimulationClass.csproj.CopyComplete
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\obj\Debug\netcoreapp3.1\SimulationClass.dll
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\obj\Debug\netcoreapp3.1\SimulationClass.pdb
+D:\teamUnity\TurnBasedBattler\SimC\SimulationClass\obj\Debug\netcoreapp3.1\SimulationClass.genruntimeconfig.cache

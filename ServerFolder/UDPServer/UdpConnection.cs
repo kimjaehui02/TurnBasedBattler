@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -93,7 +94,7 @@ namespace UDPServer
                     if (message != null)
                     {
                         // 'connectionState'에 따라 처리
-                        HandleConnectionState(udpServer, remoteEP, message);
+                        HandleConnectionState(udpServer, remoteEP, in message);
                     }
                     else
                     {
@@ -107,7 +108,7 @@ namespace UDPServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error receiving data: {ex.Message}");
+                //Console.WriteLine($"Error receiving data: {ex.Message}");
             }
             //Console.WriteLine($"ReceiveFromUDPClient종료지점 : ");
         }
@@ -115,7 +116,7 @@ namespace UDPServer
 
         #region 데이터 처리
         // 클라이언트에서 보낸 메시지의 connectionState에 따라 처리
-        private void HandleConnectionState(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+        private void HandleConnectionState(UdpClient udpClient, IPEndPoint remoteEP, in dynamic message)
         {
             string connectionState = message.connectionState;
 
@@ -127,19 +128,19 @@ namespace UDPServer
             switch (connectionState)
             {
                 case "Connecting":
-                    HandleConnecting(udpClient, remoteEP, message);
+                    HandleConnecting(udpClient, remoteEP, in message);
                     break;
 
                 case "DataSyncing":
-                    HandleDataSyncing(udpClient, remoteEP, message);
+                    HandleDataSyncing(udpClient, remoteEP, in message);
                     break;
 
                 case "Disconnecting":
-                    HandleDisconnecting(udpClient, remoteEP, message);
+                    HandleDisconnecting(udpClient, remoteEP, in message);
                     break;
 
                 case "Error":
-                    HandleError(udpClient, remoteEP, message);
+                    HandleError(udpClient, remoteEP, in message);
                     break;
 
                 default:
@@ -148,7 +149,7 @@ namespace UDPServer
             }
         }
 
-        private void HandleConnecting(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+        private void HandleConnecting(UdpClient udpClient, IPEndPoint remoteEP, in dynamic message)
         {
             Console.WriteLine("Handling Connecting state...");
             // 여기에서 플레이어 연결 처리 로직 추가
@@ -157,7 +158,7 @@ namespace UDPServer
             //SendToUDPClient(udpClient, remoteEP, ConnectionState.Connecting, new { playerId = 0 });
         }
 
-        private void HandleDataSyncing(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+        private void HandleDataSyncing(UdpClient udpClient, IPEndPoint remoteEP, in dynamic message)
         {
             //Console.WriteLine("Handling Data Syncing state...");
             // 데이터 동기화 처리 로직 추가
@@ -166,10 +167,10 @@ namespace UDPServer
             //Console.WriteLine($"message.data : {message.data}");
             //Console.WriteLine($"message.data : {message.data}");
             //Console.WriteLine($"message.data : {message.data}");
-            objectTransformManager.UpdateObjectTransformsForPlayer(message.data);
+            objectTransformManager.UpdateObjectTransformsForPlayer(in message.data);
             //Console.WriteLine("objectTransformManager.UpdateObjectTransformsForPlayer(message.data);");
 
-            dynamic allObject = objectTransformManager.ToAllJson();
+            string allObject = objectTransformManager.ToAllJson();
             //Console.WriteLine("dynamic allObject = objectTransformManager.ToAllJson();");
 
             //Console.WriteLine($"allObject");
@@ -192,7 +193,7 @@ namespace UDPServer
 
         }
 
-        private void HandleDisconnecting(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+        private void HandleDisconnecting(UdpClient udpClient, IPEndPoint remoteEP, in dynamic message)
         {
             Console.WriteLine("Handling Disconnecting state...");
             //Console.WriteLine($"message  ...{message}");
@@ -205,7 +206,7 @@ namespace UDPServer
 
         }
 
-        private void HandleError(UdpClient udpClient, IPEndPoint remoteEP, dynamic message)
+        private void HandleError(UdpClient udpClient, IPEndPoint remoteEP, in dynamic message)
         {
             Console.WriteLine("Handling Error state...");
             // 오류 처리 로직 추가
@@ -217,6 +218,8 @@ namespace UDPServer
         // 서버 실행 메서드
         public async Task RunServerAsync(UdpClient udpServer)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             //Console.WriteLine($"1. RunServerAsync시작지점 : ");
             try
             {
@@ -225,6 +228,13 @@ namespace UDPServer
                 //Console.WriteLine($"2. try : ");
                 while (true)
                 {
+                    //if (stopwatch.IsRunning)
+                    //{
+                    //    stopwatch.Stop();
+                    //    Console.WriteLine($"여기 다시 시작됨! 이전 실행부터 경과 시간: {stopwatch.ElapsedMilliseconds} ms");
+                    //}
+                    //stopwatch.Restart(); // 스톱워치를 재시작하여 다음 경과 시간을 측정
+
                     // 여러 비동기 작업을 동시에 처리
                     /*                    if (clientTasks.Count < maxConcurrentTasks)  // 최대 동시 실행 작업 수가 되지 않으면
                                         {
@@ -244,6 +254,7 @@ namespace UDPServer
                     /*var serverTask1 = Task.Run(() => ReceiveFromUDPClient(udpServer));
                     var serverTask2 = Task.Run(() => ReceiveFromUDPClient(udpServer));*/
                     await ReceiveFromUDPClient(udpServer);
+                    
                     //await Task.WhenAll(serverTask1, serverTask2);
                 }
             }

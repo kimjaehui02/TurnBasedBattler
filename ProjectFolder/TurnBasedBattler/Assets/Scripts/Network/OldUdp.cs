@@ -329,4 +329,160 @@ public class OldUdp : MonoBehaviour
         yield return null; // 계속해서 기다림
     }
     #endregion
+
+    #region old
+
+    // 오브젝트 변환을 최신화하는 함수
+    public void UpdateObjectTransforms(Dictionary<int, Dictionary<int, ObjectTransform>> objectTransforms)
+    {
+        // 게임 오브젝트 딕셔너리
+        var gameObjectTransforms = new Dictionary<int, Dictionary<int, GameObject>>();
+
+        // 현재 플레이어의 ID 가져오기
+        int currentPlayerId = GameManager.Instance.GetPlayerId();
+
+        // 외부 딕셔너리 순회
+        foreach (var outerPair in objectTransforms)
+        {
+            int playerId = outerPair.Key; // 플레이어 ID
+
+            // 현재 플레이어의 ID와 비교하여 처리
+            if (playerId == currentPlayerId)
+                continue;  // 현재 플레이어의 오브젝트는 처리하지 않음
+
+            var innerTransforms = outerPair.Value; // 해당 플레이어의 ObjectTransform 딕셔너리
+
+            if (!gameObjectTransforms.ContainsKey(playerId))
+            {
+                gameObjectTransforms[playerId] = new Dictionary<int, GameObject>();
+            }
+
+            // 해당 플레이어의 모든 ObjectTransform에 대해 처리
+            foreach (var innerPair in innerTransforms)
+            {
+                int objectId = innerPair.Key; // 오브젝트 ID
+                ObjectTransform transformData = innerPair.Value;
+
+                // 해당 오브젝트가 존재하는지 확인
+                if (gameObjectTransforms[playerId].ContainsKey(objectId))
+                {
+                    // 이미 오브젝트가 있으면 트랜스폼만 업데이트
+                    UpdateObjectTransform(gameObjectTransforms[playerId][objectId], transformData);
+                }
+                else
+                {
+                    // 오브젝트가 없으면 새로 생성
+                    CreateNewObject(playerId, objectId, transformData, gameObjectTransforms);
+                }
+            }
+        }
+
+        // 삭제된 오브젝트를 처리
+        RemoveDeletedObjects(objectTransforms);
+    }
+
+    // 게임 오브젝트의 Transform을 최신화하는 함수
+    private void UpdateObjectTransform(GameObject obj, ObjectTransform transformData)
+    {
+        if (obj != null)
+        {
+            obj.transform.position = new Vector3(transformData.PositionX, transformData.PositionY, transformData.PositionZ);
+            //obj.transform.rotation = new Quaternion(transformData.RotationX, transformData.RotationY, transformData.RotationZ, transformData.RotationW);
+            //obj.transform.localScale = new Vector3(transformData.ScaleX, transformData.ScaleY, transformData.ScaleZ);
+        }
+    }
+
+    GameObject prefab;
+
+    // 새로운 오브젝트를 생성하는 함수 (필요 시)
+    private void CreateNewObject(int playerId, int objectId, ObjectTransform transformData, Dictionary<int, Dictionary<int, GameObject>> gameObjectTransforms)
+    {
+        // 예시로 프리팹을 사용하여 오브젝트를 생성하는 방법
+        GameObject newObject = Instantiate(prefab);
+
+        if (newObject != null)
+        {
+            // 새 오브젝트를 딕셔너리에 추가
+            gameObjectTransforms[playerId][objectId] = newObject;
+            UpdateObjectTransform(newObject, transformData); // Transform 최신화
+        }
+        else
+        {
+            Debug.LogError("Prefab 로딩 실패!");
+        }
+    }
+
+    // 삭제된 오브젝트를 찾아서 제거하는 함수
+    private void RemoveDeletedObjects(Dictionary<int, Dictionary<int, ObjectTransform>> objectTransforms)
+    {
+        // 게임 오브젝트 딕셔너리에서 현재 존재하는 오브젝트들의 목록을 가져옴
+        foreach (var playerPair in GameManager.Instance.gameObjects2)
+        {
+            int playerId = playerPair.Key;
+            var existingObjects = playerPair.Value;
+
+            // 수신된 데이터에서 해당 플레이어 ID가 없으면 삭제
+            if (!objectTransforms.ContainsKey(playerId))
+            {
+                DeleteAllObjects(playerId);
+            }
+            else
+            {
+                // 해당 플레이어의 모든 오브젝트를 비교하여 삭제
+                foreach (var objectPair in existingObjects)
+                {
+                    int objectId = objectPair.Key;
+                    if (!objectTransforms[playerId].ContainsKey(objectId))
+                    {
+                        DeleteObject(playerId, objectId);
+                    }
+                }
+            }
+        }
+
+
+
+
+    }
+
+    // 플레이어의 모든 오브젝트를 삭제하는 함수
+    private void DeleteAllObjects(int playerId)
+    {
+        if (GameManager.Instance.gameObjects2.ContainsKey(playerId))
+        {
+            var playerObjects = GameManager.Instance.gameObjects2[playerId];
+            foreach (var objectPair in playerObjects)
+            {
+                DeleteObject(playerId, objectPair.Key);
+            }
+        }
+    }
+
+    // 오브젝트를 삭제하는 함수
+    private void DeleteObject(int playerId, int objectId)
+    {
+        if (GameManager.Instance.gameObjects2.ContainsKey(playerId) && GameManager.Instance.gameObjects2[playerId].ContainsKey(objectId))
+        {
+            GameObject objToRemove = GameManager.Instance.gameObjects2[playerId][objectId];
+            if (objToRemove != null)
+            {
+                Destroy(objToRemove); // 오브젝트 삭제
+                GameManager.Instance.gameObjects2[playerId].Remove(objectId); // 딕셔너리에서 제거
+                Debug.Log($"Player {playerId}, Object {objectId} 삭제");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Player {playerId}, Object {objectId}가 이미 삭제됨");
+        }
+    }
+
+    // 외부에서 데이터가 들어올 때마다 호출하는 방법을 권장 (네트워크 데이터 수신 시 호출)
+    public void OnObjectTransformsReceived(Dictionary<int, Dictionary<int, ObjectTransform>> receivedTransforms)
+    {
+        UpdateObjectTransforms(receivedTransforms);
+    }
+
+
+    #endregion
 }

@@ -17,12 +17,15 @@ public class PlayerManager : MonoBehaviour
         rb.gravityScale = 0;  // 2D에서 중력 무시
     }
 
-    void Update()
+    //void Update()
+    //{
+    //    HandlePlayerMovement();  // 내 플레이어 이동 처리
+    //    //UpdateOtherPlayerPosition();  // 다른 플레이어 위치 업데이트
+    //}
+    void FixedUpdate()
     {
-        HandlePlayerMovement();  // 내 플레이어 이동 처리
-        //UpdateOtherPlayerPosition();  // 다른 플레이어 위치 업데이트
+        HandlePlayerMovement();
     }
-
     // 플레이어 이동 처리
     private void HandlePlayerMovement()
     {
@@ -36,23 +39,5 @@ public class PlayerManager : MonoBehaviour
         rb.MovePosition(rb.position + moveDirection * moveSpeed * Time.deltaTime);
     }
 
-    // UDP로 받은 다른 플레이어의 위치를 업데이트
-    //public void UpdateOtherPlayerPosition(Vector2 newPosition)
-    //{
-    //    otherPlayerPosition = newPosition;
-    //}
 
-    // 다른 플레이어의 위치를 화면에 업데이트
-    //private void UpdateOtherPlayerPosition()
-    //{
-    //    if (otherPlayer != null)
-    //    {
-    //        // 다른 플레이어가 존재하는 경우, 해당 위치로 이동
-    //        // 부드럽게 이동시키기 위해 Lerp 사용
-    //        otherPlayer.transform.position = Vector2.Lerp(
-    //            otherPlayer.transform.position,
-    //            otherPlayerPosition,
-    //            Time.deltaTime * moveSpeed);  // 이동 속도에 맞춰 부드럽게 이동
-    //    }
-    //}
 }

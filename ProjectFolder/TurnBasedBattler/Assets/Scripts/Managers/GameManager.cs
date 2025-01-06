@@ -111,6 +111,8 @@ public class GameManager : MonoBehaviour
     // 게임 시작 시 호출되는 메서드
     private void Start()
     {
+        // 창 크기를 800x600으로 설정
+        Screen.SetResolution(800, 600, false); // false는 전체화면을 비활성화
         Application.runInBackground = true;
         gameObjects.Add(0, one);
         gameObjects.Add(1, two);
