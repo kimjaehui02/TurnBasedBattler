@@ -64,15 +64,6 @@ public class JsonCompressionManager : MonoBehaviour
     }
 
 
-
-
-
-
-
-
-
-
-
     // 압축된 JSON의 크기 (바이트 단위)
     public static long GetCompressedSize(string json)
     {
