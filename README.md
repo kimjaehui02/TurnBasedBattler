@@ -111,7 +111,7 @@ void SyncPlayerPosition(Player player) {
     // 서버에서 해당 위치를 클라이언트에게 전송
     SendPositionToClient(player);
 }
-
+```
 ## 10. 다이어그램
 
 ### 시스템 아키텍처 다이어그램
