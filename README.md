@@ -72,6 +72,9 @@
      - 네트워크 직렬화 및 역직렬화 성능 개선으로 서버와 클라이언트 간의 응답 시간 단축
      - 효율적인 직렬화 방식(예: JSON 최적화, 데이터 크기 감소)을 사용하여 네트워크 지연시간 최소화
      - 직렬화 시간 단축을 통해 실시간 데이터 전송 및 빠른 응답 보장
+       
+[Issue1.cs 파일 보기](https://github.com/kimjaehui02/TurnBasedBattler/blob/main/SimC/SimulationClass/Issue1.cs)
+
 
 
 ### 동기화 문제 해결
