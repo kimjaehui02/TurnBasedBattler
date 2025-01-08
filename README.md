@@ -111,7 +111,21 @@
      - 16바이트 이하 구조체 직렬화 방식을 사용하여 네트워크 지연시간 최소화
      - 직렬화 시간 단축을 통해 실시간 데이터 전송 및 빠른 응답 보장
        
-[Issue1.cs 파일 보기](https://github.com/kimjaehui02/TurnBasedBattler/blob/main/SimC/SimulationClass/Issue1.cs)
+## 성능 비교
+
+#### 1. JSON 직렬화/역직렬화 성능 (클래스 사용)
+
+- **Original JSON Serialization**: 190ms  
+- **Original JSON Deserialization**: 29ms  
+
+#### 2. JSON 직렬화/역직렬화 성능 (구조체 사용)
+
+- **Compact JSON Serialization**: 2ms  
+- **Compact JSON Deserialization**: 0ms  
+
+### 참고:
+- 해당 성능 테스트는 [여기](https://github.com/kimjaehui02/TurnBasedBattler/blob/main/SimC/SimulationClass/Issue1.cs)에서 확인할 수 있습니다. 
+
 
 ## 참고 문서
 
