@@ -158,6 +158,7 @@ void SyncPlayerPosition(Player player) {
 ```
 ## 10. 다이어그램
 
+![다이어그램](https://github.com/kimjaehui02/TurnBasedBattler/blob/main/one.png)
 
 
 
