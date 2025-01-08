@@ -180,7 +180,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 30174132}
-  - component: {fileID: 30174133}
   m_Layer: 0
   m_Name: PhotonManager
   m_TagString: Untagged
@@ -203,19 +202,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &30174133
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 30174129}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ad2e370b9f459f4fa111768612a6fa3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerPrefab: {fileID: 165031794602603884, guid: 1c1c35d061af7a84ab884e4613c04cb0, type: 3}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -967,10 +953,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   transformManager: {fileID: 0}
   isConnected: 0
-  Text1: {fileID: 0}
-  text2: {fileID: 0}
-  text3: {fileID: 0}
-  textcheck: 0
 --- !u!4 &1532384113
 Transform:
   m_ObjectHideFlags: 0
@@ -1201,7 +1183,8 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5305395437460227684, guid: ab882f4f60872a048b0779e039f07387, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

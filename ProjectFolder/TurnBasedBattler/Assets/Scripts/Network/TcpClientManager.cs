@@ -1,33 +1,23 @@
-using UnityEngine;
-using System.Net.Sockets;
-using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
-using Newtonsoft.Json;
-using System.Threading;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+using System.Net.Sockets;
+using System.Text;
 
+using UnityEngine;
+using UnityEngine.Windows;
 
 public class TcpClientManager : MonoBehaviour
 {
-    #region 통신용 변수들
-    //private const string ServerIp = "127.0.0.1";  // 서버 IP
-    //private const int ServerPort = 9090;  // 서버 포트
+
+    #region 변수들
+
     private TcpClient _client;
     private NetworkStream _stream;
+    private bool _isConnected;
 
-
-
-    private bool _isConnected = false;
-
-    CancellationTokenSource starttoken = new CancellationTokenSource();
-    
-
-    #endregion
-
-    #region 게임플레이용 변수들
-    //public GameObject myPlayerObject;  // 내 플레이어 오브젝트
     #endregion
 
     #region json선언부
@@ -42,9 +32,34 @@ public class TcpClientManager : MonoBehaviour
     }
     #endregion
 
-    #region 송신함수
+
+    public void OnApplicationQuit()
+    {
+        Quit();
+    }
+
+    #region 기본통신
+    // UDP 클라이언트 초기화
+    public void ConnectServer(string ServerIp, int ServerPort)
+    {
+
+        // TCP 클라이언트 연결
+        _client = new TcpClient(ServerIp, ServerPort);
+        _stream = _client.GetStream();
+        
+
+        // 서버와 연결 후 초기화 작업
+        SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
+
+        // TCP 데이터 수신 시작
+        StartCoroutine(ReceiveFromTCPServerCoroutine());
+
+    }
+
+    // UDP 데이터 송신
     public void SendToTcpServer(ConnectionState connectionState, object messageData)
     {
+        // 데이터 송신 코드
         try
         {
             // 메시지 구성
@@ -74,86 +89,50 @@ public class TcpClientManager : MonoBehaviour
         {
             Debug.LogError($"TCP 전송 중 오류 발생: {ex.Message}");
         }
-        Debug.Log($" SendToTcpServer(ConnectionState connectionState, object messageData)의 종료");
+        
 
     }
-    #endregion
-
-    #region 수신함수
 
     public IEnumerator ReceiveFromTCPServerCoroutine()
     {
         byte[] buffer = new byte[1024];
-        //int testingnumb = 0;
-
-        //yield return null;  // 초기화 후 한 프레임 대기
-        yield return new WaitUntil(() => _stream.DataAvailable);  // 데이터가 있을 때까지 기다림
-
 
         while (_client.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
         {
-            //testingnumb++;
-
-
-            if (starttoken.IsCancellationRequested)
+            if (!_stream.DataAvailable)
             {
-                Debug.Log("작업이 취소되었습니다.");
-                yield break;
+                yield return null;  // 데이터 준비 상태에서만 작업을 진행하도록 함
+                continue;
             }
-
-            //Debug.Log("if (starttoken.IsCancellationRequested)");
-
-            Debug.Log($"_stream.DataAvailable: {_stream.DataAvailable}");
-            // 데이터를 읽을 준비가 되었다면
-            yield return new WaitUntil(() => _stream.DataAvailable);  // 데이터가 있을 때까지 기다림
-
-
-
 
             int bytesRead = _stream.Read(buffer, 0, buffer.Length);
             Debug.Log($"bytesRead: {bytesRead}");
 
-            try
+            if (bytesRead > 0)
             {
+                byte[] data = new byte[bytesRead];
+                Array.Copy(buffer, 0, data, 0, bytesRead);
 
-                // 데이터 수신
-                //int bytesRead = 0;//_stream.Read(buffer, 0, buffer.Length);
-                if (bytesRead > 0)
+                // 받은 데이터를 UTF-8 문자열로 변환
+                string json = Encoding.UTF8.GetString(data);
+
+                // JSON 처리
+                try
                 {
-                    byte[] data = new byte[bytesRead];
-                    Array.Copy(buffer, 0, data, 0, bytesRead);
-
-                    // 받은 데이터를 UTF-8 문자열로 변환
-                    string json = Encoding.UTF8.GetString(data);
-                    Debug.Log($"json: {json}");
-                    Debug.Log($"json: {json}");
-                    Debug.Log($"json: {json}");
-                    Debug.Log($"json: {json}");
-                    Debug.Log($"json: {json}");
-
-                    // JSON 처리
-                    try
+                    var message = JsonConvert.DeserializeObject<dynamic>(json);
+                    if (message != null)
                     {
-                        var message = JsonConvert.DeserializeObject<dynamic>(json);
-                        if (message != null)
-                        {
-                            HandleConnectionState(message);  // 상태 처리
-                            
-                        }
-                        else
-                        {
-                            Debug.Log("Failed to parse JSON.");
-                        }
+                        HandleConnectionState(message);  // 상태 처리
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Debug.Log($"Error parsing JSON: {ex.Message}");
+                        Debug.Log("Failed to parse JSON.");
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.Log($"Error reading data: {ex.Message}");
+                catch (Exception ex)
+                {
+                    Debug.Log($"Error parsing JSON: {ex.Message}");
+                }
             }
 
             // 데이터를 처리하고 한 프레임 대기
@@ -161,7 +140,33 @@ public class TcpClientManager : MonoBehaviour
         }
     }
 
+    // 클라이언트 종료
+    public void Quit()
+    {
+        try
+        {
+            SendToTcpServer(ConnectionState.Disconnecting, new { playerId = GameManager.Instance.GetPlayerId() });
+            if (_isConnected)
+            {
+                _isConnected = false;
+                _stream?.Close();
+                _client?.Close();
 
+                Debug.Log("서버와의 연결을 종료했습니다.");
+            }
+            //starttoken?.Cancel();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"연결 종료 중 오류 발생: {ex.Message}");
+        }
+    }
+    #endregion
+
+
+
+
+    #region 핸들러
 
     private void HandleConnectionState(dynamic message)
     {
@@ -199,11 +204,7 @@ public class TcpClientManager : MonoBehaviour
         {
             // JSON을 JObject로 변환
             JObject jsonObject = JObject.Parse(message.ToString());
-            Debug.Log($"jsonObject...{jsonObject}");
-            Debug.Log($"jsonObject...{jsonObject}");
-            Debug.Log($"jsonObject...{jsonObject}");
-            Debug.Log($"jsonObject...{jsonObject}");
-            Debug.Log($"jsonObject...{jsonObject}");
+
             // "data" 항목 확인
             if (jsonObject["data"] != null)
             {
@@ -269,106 +270,8 @@ public class TcpClientManager : MonoBehaviour
         Debug.Log("Handling Error state...");
     }
 
+
     #endregion
 
-    #region 연결 및 종료 처리
-    public IEnumerator StartConnectionCoroutine(string inputIp, int inputPort)
-    {
 
-
-        Debug.Log($"StartConnectionCoroutine {inputIp}, {inputPort}");
-        // TCP 클라이언트 연결
-        _client = new TcpClient(inputIp, inputPort);
-        _stream = _client.GetStream();
-        _isConnected = true;
-        Debug.Log("서버에 연결되었습니다.");
-
-        // 서버와 연결 후 초기화 작업
-        SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
-        Debug.Log("서버와 연결 후 초기화 작업 끝");
-        Debug.Log($"yield return new WaitUntil(() => _stream.DataAvailable);  : {_stream.DataAvailable}");
-
-        // TCP 데이터 수신 시작
-        yield return StartCoroutine(ReceiveFromTCPServerCoroutine());
-        //yield return null;
-        Debug.Log("TCP 데이터 수신 종료");
-    }
-
-    public void ConnectServer(string inputIp, int inputPort)
-    {
-
-        StartCoroutine(StartConnectionCoroutine(inputIp, inputPort));
-    }
-
-
-
-
-    // 서버와 연결을 종료하는 메서드
-    public void Quit()
-    {
-        try
-        {
-            SendToTcpServer(ConnectionState.Disconnecting, new { playerId = GameManager.Instance.GetPlayerId() });
-            if (_isConnected)
-            {
-                _isConnected = false;
-                _stream?.Close();
-                _client?.Close();
-                
-                Debug.Log("서버와의 연결을 종료했습니다.");
-            }
-            starttoken?.Cancel();
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"연결 종료 중 오류 발생: {ex.Message}");
-        }
-    }
-
-    // 애플리케이션 종료 시 호출
-    public void OnApplicationQuit()
-    {
-        Quit();
-    }
-    #endregion
-}
-
-public class ServerInfo
-{
-    public string ipAddress;
-    public int tcpPort;
-    public int udpPort;
-
-    public ServerInfo(string ip, int tcp, int udp)
-    {
-        ipAddress = ip;
-        tcpPort = tcp;
-        udpPort = udp;
-    }
-}
-
-public class ServerList
-{
-    private List<ServerInfo> servers;
-
-    // JSON 문자열로 초기화
-    public ServerList(string jsonData)
-    {
-        servers = JsonConvert.DeserializeObject<List<ServerInfo>>(jsonData);
-    }
-
-    // 특정 서버 정보 가져오기
-    public (string ipAddress, int tcpPort, int udpPort) GetServerInfo(int index)
-    {
-        if (index < 0 || index >= servers.Count)
-        {
-            throw new ArgumentOutOfRangeException("Invalid index for server list");
-        }
-
-        var server = servers[index];
-        return (server.ipAddress, server.tcpPort, server.udpPort);
-    }
-
-    // 서버 수 가져오기
-    public int ServerCount => servers.Count;
 }
