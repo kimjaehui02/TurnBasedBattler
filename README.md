@@ -160,7 +160,9 @@ void SyncPlayerPosition(Player player) {
 
 <details>
 <summary>기술 스택 보기</summary>
+  
 ![다이어그램](https://github.com/kimjaehui02/TurnBasedBattler/blob/main/one.png)
+
 </details>
 
 
