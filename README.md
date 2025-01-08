@@ -6,6 +6,7 @@
 - [4. 주요 기능 및 구현](#4-주요-기능-및-구현)
 - [5. 기술적 도전과 해결 방법](#5-기술적-도전과-해결-방법)
 - [6. 향후 계획 및 개선 사항](#6-향후-계획-및-개선-사항)
+- [7. 다이어그램](#7-다이어그램)
 
 ## 1. 프로젝트 개요
 <details>
@@ -172,7 +173,7 @@
 ## 7. 다이어그램
 
 <details>
-<summary>기술 스택 보기</summary>
+<summary>다이어그램 보기</summary>
   
 ![다이어그램](https://github.com/kimjaehui02/TurnBasedBattler/blob/main/one.png)
 
