@@ -333,42 +333,30 @@ public class TcpClientManagerOld : MonoBehaviour
     #endregion
 }
 
-public class ServerInfo
-{
-    public string ipAddress;
-    public int tcpPort;
-    public int udpPort;
 
-    public ServerInfo(string ip, int tcp, int udp)
-    {
-        ipAddress = ip;
-        tcpPort = tcp;
-        udpPort = udp;
-    }
-}
 
-public class ServerList
-{
-    private List<ServerInfo> servers;
+//public class ServerList
+//{
+//    private List<ServerInfo> servers;
 
-    // JSON 문자열로 초기화
-    public ServerList(string jsonData)
-    {
-        servers = JsonConvert.DeserializeObject<List<ServerInfo>>(jsonData);
-    }
+//    // JSON 문자열로 초기화
+//    public ServerList(string jsonData)
+//    {
+//        servers = JsonConvert.DeserializeObject<List<ServerInfo>>(jsonData);
+//    }
 
-    // 특정 서버 정보 가져오기
-    public (string ipAddress, int tcpPort, int udpPort) GetServerInfo(int index)
-    {
-        if (index < 0 || index >= servers.Count)
-        {
-            throw new ArgumentOutOfRangeException("Invalid index for server list");
-        }
+//    // 특정 서버 정보 가져오기
+//    public (string ipAddress, int tcpPort, int udpPort) GetServerInfo(int index)
+//    {
+//        if (index < 0 || index >= servers.Count)
+//        {
+//            throw new ArgumentOutOfRangeException("Invalid index for server list");
+//        }
 
-        var server = servers[index];
-        return (server.ipAddress, server.tcpPort, server.udpPort);
-    }
+//        var server = servers[index];
+//        return (server.ipAddress, server.tcpPort, server.udpPort);
+//    }
 
-    // 서버 수 가져오기
-    public int ServerCount => servers.Count;
-}
+//    // 서버 수 가져오기
+//    public int ServerCount => servers.Count;
+//}

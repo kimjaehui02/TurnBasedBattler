@@ -5,7 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
-
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Windows;
 
@@ -16,7 +16,7 @@ public class TcpClientManager : MonoBehaviour
 
     private TcpClient _client;
     private NetworkStream _stream;
-    private bool _isConnected;
+    //private bool _isConnected;
 
     #endregion
 
@@ -42,18 +42,79 @@ public class TcpClientManager : MonoBehaviour
     // UDP 클라이언트 초기화
     public void ConnectServer(string ServerIp, int ServerPort)
     {
+        if(_client != null)
+        {
+            Debug.Log("if(_isConnected == true)if(_isConnected == true)if(_isConnected == true)");
+            Debug.Log("if(_isConnected == true)if(_isConnected == true)if(_isConnected == true)");
+            Debug.Log("if(_isConnected == true)if(_isConnected == true)if(_isConnected == true)");
+            Debug.Log("if(_isConnected == true)if(_isConnected == true)if(_isConnected == true)");
+            Quit();
+        }
 
+
+        #region 구코드
         // TCP 클라이언트 연결
-        _client = new TcpClient(ServerIp, ServerPort);
-        _stream = _client.GetStream();
-        
+        //_client = new TcpClient(ServerIp, ServerPort);
+        //_stream = _client.GetStream();
 
-        // 서버와 연결 후 초기화 작업
-        SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
 
-        // TCP 데이터 수신 시작
-        StartCoroutine(ReceiveFromTCPServerCoroutine());
+        //// 서버와 연결 후 초기화 작업
+        //SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
 
+        //// TCP 데이터 수신 시작
+        //StartCoroutine(ReceiveFromTCPServerCoroutine(ServerIp, ServerPort));
+
+        #endregion
+
+
+
+        // 연결시 생기는 오류들
+        try
+        {
+            // 비동기로 TcpClient 연결
+            Task.Run(async () =>
+            {
+                _client = await Task.Run(() => new TcpClient(ServerIp, ServerPort));
+                _stream = _client.GetStream();
+                Debug.Log("과잉 오류처리에????");
+                Debug.Log("과잉 오류처리에????");
+                Debug.Log("과잉 오류처리에????");
+                Debug.Log("과잉 오류처리에????");
+                Debug.Log("송신후????");
+                Debug.Log("송신후????");
+                Debug.Log("송신후????");
+                Debug.Log("송신후????");
+                // TCP 데이터 수신 시작
+                Debug.Log("수시닝????");
+                Debug.Log("수시닝????");
+                Debug.Log("수시닝????");
+                Debug.Log("수시닝????");
+            });
+            SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
+            StartCoroutine(ReceiveFromTCPServerCoroutine(ServerIp, ServerPort));
+            Debug.Log("과잉 오류처리종료입니다");
+            Debug.Log("과잉 오류처리종료입니다");
+            Debug.Log("과잉 오류처리종료입니다");
+            Debug.Log("과잉 오류처리종료입니다");
+        }
+        catch (Exception e)
+        {
+            Debug.Log("과잉 오류처리에");
+            Debug.Log("과잉 오류처리에");
+            Debug.Log("과잉 오류처리에");
+            Debug.Log("과잉 오류처리에");
+
+            Debug.Log(e.ToString());
+            StartCoroutine(ReStart(ServerIp, ServerPort));
+        }
+
+
+    }
+
+    private IEnumerator ReStart(string ServerIp, int ServerPort)
+    {
+        yield return new WaitForSeconds(5f);  // 5초 기다림
+        ConnectServer(ServerIp, ServerPort);
     }
 
     // UDP 데이터 송신
@@ -87,18 +148,45 @@ public class TcpClientManager : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogError($"TCP 전송 중 오류 발생: {ex.Message}");
+            Debug.Log($"TCP 전송 중 오류 발생: {ex.Message}");
         }
         
 
     }
 
-    public IEnumerator ReceiveFromTCPServerCoroutine()
+    public IEnumerator ReceiveFromTCPServerCoroutine(string ServerIp, int ServerPort)
     {
         byte[] buffer = new byte[1024];
-
-        while (_client.Connected)  // 클라이언트가 연결되어 있을 때만 데이터 수신
+        bool isForceDisconnected = false;
+        while (true)  // 클라이언트가 연결되어 있을 때만 데이터 수신
         {
+            try
+            {
+                if (_client.Connected == false)
+                {
+                    Debug.Log("노잼종료");
+                    Debug.Log("노잼종료");
+                    Debug.Log("노잼종료");
+                    Debug.Log("노잼종료");
+                    Debug.Log("노잼종료");
+
+                    break;
+                }
+            }
+            catch (Exception ex)  // 예외를 넓게 잡는 경우
+            {
+                Debug.Log("젠장 TC 이 귀한 연결을 나에게");
+                Debug.Log("젠장 TC 이 귀한 연결을 나에게");
+                Debug.Log($"예외 발생: {ex.Message}");  // 에러 로그
+                Debug.Log("젠장 TC 이 귀한 연결을 나에게");
+                Debug.Log("젠장 TC 이 귀한 연결을 나에게");
+                isForceDisconnected = true;
+                break;
+            }
+
+
+
+
             if (!_stream.DataAvailable)
             {
                 yield return null;  // 데이터 준비 상태에서만 작업을 진행하도록 함
@@ -138,6 +226,12 @@ public class TcpClientManager : MonoBehaviour
             // 데이터를 처리하고 한 프레임 대기
             yield return null;
         }
+
+        if (isForceDisconnected == true)
+        {
+            yield return new WaitForSeconds(5f);  // 5초 기다림
+            ConnectServer(ServerIp, ServerPort);
+        }
     }
 
     // 클라이언트 종료
@@ -146,14 +240,15 @@ public class TcpClientManager : MonoBehaviour
         try
         {
             SendToTcpServer(ConnectionState.Disconnecting, new { playerId = GameManager.Instance.GetPlayerId() });
-            if (_isConnected)
-            {
-                _isConnected = false;
-                _stream?.Close();
-                _client?.Close();
+            //_isConnected = false;
+            _stream?.Close();
+            _stream = null;
+            _client?.Close();
+            _client = null;
+            GameManager.Instance.SetPlayerId(-1);
 
-                Debug.Log("서버와의 연결을 종료했습니다.");
-            }
+
+            Debug.Log("서버와의 연결을 종료했습니다.");
             //starttoken?.Cancel();
         }
         catch (Exception ex)
@@ -199,6 +294,7 @@ public class TcpClientManager : MonoBehaviour
     private void HandleConnecting(dynamic message)
     {
         Debug.Log("Handling Connecting state...");
+        Debug.Log($"{message}");
 
         try
         {
@@ -224,15 +320,19 @@ public class TcpClientManager : MonoBehaviour
                 // "subServerList" 항목 확인
                 if (jsonObject["data"]["subServerList"] != null && jsonObject["data"]["subServerList"].HasValues)
                 {
+
+
                     // subServerList 값이 비어 있지 않으면 처리
                     List<ServerInfo> subServerList = jsonObject["data"]["subServerList"].ToObject<List<ServerInfo>>();
 
+                    GameManager.Instance.SetServerUi(subServerList);
+
                     // 첫 번째 서버 정보 접근
-                    ServerInfo firstServer = subServerList[0];
-                    string ip = firstServer.ipAddress;
-                    int tcp = firstServer.tcpPort;
-                    int udp = firstServer.udpPort;
-                    GameManager.Instance.ConnectSubServer(ip, tcp, udp);
+                    //ServerInfo firstServer = subServerList[0];
+                    //string ip = firstServer.ipAddress;
+                    //int tcp = firstServer.tcpPort;
+                    //int udp = firstServer.udpPort;
+                    //GameManager.Instance.ConnectSubServer(ip, tcp, udp);
 
                     Debug.Log($"subServerList found: {subServerList}");
                 }

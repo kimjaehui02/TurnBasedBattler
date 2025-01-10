@@ -446,7 +446,7 @@ namespace UDPServer
         private void HandleConnectionStateToClient(dynamic message, int id)
         {
             string connectionState = message.connectionState;
-
+            Console.WriteLine($"수입산 정보 : {connectionState}");
             switch (connectionState)
             {
                 case "Connecting":

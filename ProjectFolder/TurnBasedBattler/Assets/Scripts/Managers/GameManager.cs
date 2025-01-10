@@ -43,6 +43,11 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
+
+    //public delegate void ServerInfoUpdated(List<ServerInfo> serverInfos);
+    //public static event ServerInfoUpdated OnServerInfoUpdated;
+
+
     [SerializeField]
     private TcpClientManager tcpMainClientManager;
     [SerializeField]
@@ -51,6 +56,8 @@ public class GameManager : MonoBehaviour
     private UdpClientManager udpClientManager;
     [SerializeField]
     private PlayerInfoManager playerInfoManager;
+    [SerializeField]
+    private ServerUIManager serverUIManager;
 
     //[SerializeField]
     public Dictionary<int, GameObject> gameObjects = new Dictionary<int, GameObject>();
@@ -108,11 +115,18 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void SetServerUi(List<ServerInfo> input)
+    {
+
+
+        serverUIManager.UpdateModel(input);
+    }
+
     // 게임 시작 시 호출되는 메서드
     private void Start()
     {
         // 창 크기를 800x600으로 설정
-        Screen.SetResolution(800, 600, false); // false는 전체화면을 비활성화
+        Screen.SetResolution(1920, 1080, false); // false는 전체화면을 비활성화
         Application.runInBackground = true;
         gameObjects.Add(0, one);
         gameObjects.Add(1, two);

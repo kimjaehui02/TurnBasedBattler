@@ -19,7 +19,7 @@ public class UdpClientManager : MonoBehaviour
 
     private UdpClient udpClient;
     private UdpClient udpClientReceive;
-    private bool isConnected;
+    //private bool _isConnected;
 
     private const float sendInterval = 0.01f; // 좌표 전송 간격
     private float lastSendTime = 0f;
@@ -54,9 +54,13 @@ public class UdpClientManager : MonoBehaviour
     // UDP 클라이언트 초기화
     public void ConnectServer(string ServerIp, int ServerPort)
     {
+        if (udpClient != null)
+        {
+            Quit();
+        }
         // 클라이언트 초기화 코드
         udpClient = new UdpClient(ServerIp, ServerPort);
-        isConnected = true;
+        //_isConnected = true;
         SendToUDPServer(ConnectionState.Connecting, new { playerName = "Player1" });
 
         //CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
@@ -88,7 +92,7 @@ public class UdpClientManager : MonoBehaviour
             };
 
             string jsonMessage = JsonConvert.SerializeObject(message, Formatting.Indented, settings);
-            Debug.Log($"보내는 JSON: {jsonMessage}");
+            //Debug.Log($"보내는 JSON: {jsonMessage}");
 
             byte[] data = CompressionManager.CompressJson(jsonMessage);
             //byte[] data = Encoding.UTF8.GetBytes(jsonMessage);
@@ -103,6 +107,8 @@ public class UdpClientManager : MonoBehaviour
     // UDP 데이터 수신
     public IEnumerator ReceiveFromUDPServerCoroutine()
     {
+
+
         // 데이터 수신 코드
         while (true)
         {
@@ -110,7 +116,20 @@ public class UdpClientManager : MonoBehaviour
             if (udpClient.Available > 0)
             {
                 IPEndPoint remoteEP = null;
-                byte[] data = udpClient.Receive(ref remoteEP);
+                byte[] data = null;
+                try
+                {
+                    data = udpClient.Receive(ref remoteEP);
+
+                }
+                catch
+                {
+                    Debug.Log("제하하하핳 이 에러는 뭐냐");
+                    Debug.Log("제하하하핳 이 에러는 뭐냐");
+                    Debug.Log("제하하하핳 이 에러는 뭐냐");
+                    Debug.Log("제하하하핳 이 에러는 뭐냐");
+                }
+
                 //byte[] data = result.Buffer;  // 받은 데이터
                 //IPEndPoint remoteEP = result.RemoteEndPoint; // 송신자 정보
 
@@ -159,9 +178,10 @@ public class UdpClientManager : MonoBehaviour
             SendToUDPServer(ConnectionState.Disconnecting, new { playerId = GameManager.Instance.GetPlayerId() });
             if (udpClient != null)
             {
-                isConnected = false;
+                //_isConnected = false;
                 udpClient.Close();
-                Debug.Log("Disconnected and closed UDP client.");
+                udpClient = null;  // null로 초기화
+                Debug.Log("D_isConnected and closed UDP client.");
             }
         }
         catch (Exception ex)
@@ -173,22 +193,22 @@ public class UdpClientManager : MonoBehaviour
 
     public void Updatecyle()
     {
-        if (isConnected == false)
-        {
-            Debug.Log("(isConnected == false)");
-            Debug.Log("(isConnected == false)");
-            Debug.Log("(isConnected == false)");
-            Debug.Log("(isConnected == false)");
+        //if (_isConnected == false)
+        //{
+        //    Debug.Log("(_isConnected == false)");
+        //    //Debug.Log("(_isConnected == false)");
+        //    //Debug.Log("(_isConnected == false)");
+        //    //Debug.Log("(_isConnected == false)");
 
-            return;
-        }
+        //    return;
+        //}
 
         if (GameManager.Instance.GetPlayerId() == -1)
         {
             Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
-            Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
-            Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
-            Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
+            //Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
+            //Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
+            //Debug.Log("(GameManager.Instance.GetPlayerId() == -1)");
 
             return;
         }

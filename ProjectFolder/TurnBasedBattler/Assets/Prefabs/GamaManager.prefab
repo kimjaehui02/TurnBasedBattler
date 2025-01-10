@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1991263928692890661}
   - component: {fileID: 526290827549366058}
   - component: {fileID: 4984813895993222348}
+  - component: {fileID: 1392911054934977951}
   m_Layer: 0
   m_Name: GamaManager
   m_TagString: Untagged
@@ -53,6 +54,7 @@ MonoBehaviour:
   tcpSubClientManager: {fileID: 8899269153954342754}
   udpClientManager: {fileID: 1991263928692890661}
   playerInfoManager: {fileID: 526290827549366058}
+  serverUIManager: {fileID: 1392911054934977951}
   ServerObjects: []
   one: {fileID: 0}
   two: {fileID: 0}
@@ -123,3 +125,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefab: {fileID: 0}
+--- !u!114 &1392911054934977951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7194397956107102295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e31822fa58fedbb45b61f42813732c80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serverUIPrefab: {fileID: 4617926417031865286, guid: 1f066cbb896883649b06e2f7dfc3d247, type: 3}
+  parentContainer: {fileID: 0}
+  gameObjects: []
