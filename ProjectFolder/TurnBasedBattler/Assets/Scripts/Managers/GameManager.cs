@@ -126,7 +126,8 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         // 창 크기를 800x600으로 설정
-        Screen.SetResolution(1920, 1080, false); // false는 전체화면을 비활성화
+        Screen.SetResolution(800, 600, false); // false는 전체화면을 비활성화
+        //Screen.SetResolution(1920, 1080, false); // false는 전체화면을 비활성화
         Application.runInBackground = true;
         gameObjects.Add(0, one);
         gameObjects.Add(1, two);

@@ -89,13 +89,11 @@ public class TcpClientManager : MonoBehaviour
                 Debug.Log("수시닝????");
                 Debug.Log("수시닝????");
                 Debug.Log("수시닝????");
+
             });
             SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
             StartCoroutine(ReceiveFromTCPServerCoroutine(ServerIp, ServerPort));
-            Debug.Log("과잉 오류처리종료입니다");
-            Debug.Log("과잉 오류처리종료입니다");
-            Debug.Log("과잉 오류처리종료입니다");
-            Debug.Log("과잉 오류처리종료입니다");
+
         }
         catch (Exception e)
         {

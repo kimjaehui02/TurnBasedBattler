@@ -106,7 +106,7 @@ namespace UDPServer
                     Console.WriteLine($"Error parsing JSON: {ex.Message}");
                 }
             }
-            catch (Exception ex)
+            catch //(Exception ex)
             {
                 //Console.WriteLine($"Error receiving data: {ex.Message}");
             }

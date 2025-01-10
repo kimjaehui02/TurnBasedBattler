@@ -50,7 +50,8 @@ class UdpServer
         Console.WriteLine("UDP 서버 시작...");
         PlayerManager playerManager = new PlayerManager();
         ObjectTransformManager objectTransformManager = new ObjectTransformManager();
-        UDPServer.TcpConnection tcpConnection = new UDPServer.TcpConnection(playerManager, objectTransformManager);
+        //UDPServer.TcpConnection tcpConnection = new UDPServer.TcpConnection(playerManager, objectTransformManager);
+        TcpConnectionManager tcpConnectionManager = new TcpConnectionManager(playerManager, objectTransformManager);
         UDPServer.UdpConnection udpConnection = new UDPServer.UdpConnection(playerManager, objectTransformManager);
 
         (int tcpPort, int udpPort) = FindAvailablePorts();
@@ -60,7 +61,8 @@ class UdpServer
 
         #region tcp연결구현
         Console.WriteLine("TCP 연결 시작...");
-        var tcpTask = Task.Run(() => tcpConnection.StartConnection(ServerIp, ServerPort, tcpPort, udpPort));
+        //var tcpTask = Task.Run(() => tcpConnection.StartConnection(ServerIp, ServerPort, tcpPort, udpPort));
+        var tcpTask = Task.Run(() => tcpConnectionManager.StartConnection(ServerIp, ServerPort, tcpPort, udpPort));
         #endregion tcp연결구현 끝
 
 

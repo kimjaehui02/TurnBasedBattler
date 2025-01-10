@@ -79,6 +79,7 @@
   <ItemGroup>
     <Compile Include="JsonCompressionManager.cs" />
     <Compile Include="Manager\ObjectTransformManager.cs" />
+    <Compile Include="Manager\TcpConnectionManager.cs" />
     <Compile Include="PlayerConnection.cs" />
     <Compile Include="Manager\PlayerManager.cs" />
     <Compile Include="PlayerState.cs" />

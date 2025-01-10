@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Windows;
 using System.Threading;
 using System;
+using System.Threading.Tasks;
 
 public class UdpClientManager : MonoBehaviour
 {
@@ -104,10 +105,13 @@ public class UdpClientManager : MonoBehaviour
         }
     }
 
+    
+
     // UDP 데이터 수신
     public IEnumerator ReceiveFromUDPServerCoroutine()
     {
-
+        IPEndPoint remoteEP = null;
+        byte[] data = null;
 
         // 데이터 수신 코드
         while (true)
@@ -115,10 +119,10 @@ public class UdpClientManager : MonoBehaviour
 
             if (udpClient.Available > 0)
             {
-                IPEndPoint remoteEP = null;
-                byte[] data = null;
+
                 try
                 {
+                    udpClient.Client.ReceiveTimeout = 5;  // 1초 타임아웃 설정
                     data = udpClient.Receive(ref remoteEP);
 
                 }
@@ -128,6 +132,7 @@ public class UdpClientManager : MonoBehaviour
                     Debug.Log("제하하하핳 이 에러는 뭐냐");
                     Debug.Log("제하하하핳 이 에러는 뭐냐");
                     Debug.Log("제하하하핳 이 에러는 뭐냐");
+                    continue;
                 }
 
                 //byte[] data = result.Buffer;  // 받은 데이터
@@ -162,7 +167,7 @@ public class UdpClientManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("Received empty buffer.");
+                //Debug.Log("Received empty buffer.");
             }
 
 
