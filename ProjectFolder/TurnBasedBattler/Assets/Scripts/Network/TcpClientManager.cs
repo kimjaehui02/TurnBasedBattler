@@ -53,45 +53,17 @@ public class TcpClientManager : MonoBehaviour
 
 
         #region 구코드
-        // TCP 클라이언트 연결
-        //_client = new TcpClient(ServerIp, ServerPort);
-        //_stream = _client.GetStream();
-
-
-        //// 서버와 연결 후 초기화 작업
-        //SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
-
-        //// TCP 데이터 수신 시작
-        //StartCoroutine(ReceiveFromTCPServerCoroutine(ServerIp, ServerPort));
-
-        #endregion
-
-
-
-        // 연결시 생기는 오류들
         try
         {
-            // 비동기로 TcpClient 연결
-            Task.Run(async () =>
-            {
-                _client = await Task.Run(() => new TcpClient(ServerIp, ServerPort));
-                _stream = _client.GetStream();
-                Debug.Log("과잉 오류처리에????");
-                Debug.Log("과잉 오류처리에????");
-                Debug.Log("과잉 오류처리에????");
-                Debug.Log("과잉 오류처리에????");
-                Debug.Log("송신후????");
-                Debug.Log("송신후????");
-                Debug.Log("송신후????");
-                Debug.Log("송신후????");
-                // TCP 데이터 수신 시작
-                Debug.Log("수시닝????");
-                Debug.Log("수시닝????");
-                Debug.Log("수시닝????");
-                Debug.Log("수시닝????");
+            // TCP 클라이언트 연결
+            _client = new TcpClient(ServerIp, ServerPort);
+            _stream = _client.GetStream();
 
-            });
+
+            // 서버와 연결 후 초기화 작업
             SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
+
+            // TCP 데이터 수신 시작
             StartCoroutine(ReceiveFromTCPServerCoroutine(ServerIp, ServerPort));
 
         }
@@ -105,6 +77,48 @@ public class TcpClientManager : MonoBehaviour
             Debug.Log(e.ToString());
             StartCoroutine(ReStart(ServerIp, ServerPort));
         }
+
+        #endregion
+
+
+
+        // 연결시 생기는 오류들
+        //try
+        //{
+        //    // 비동기로 TcpClient 연결
+        //    Task.Run(async () =>
+        //    {
+        //        _client = await Task.Run(() => new TcpClient(ServerIp, ServerPort));
+        //        _stream = _client.GetStream();
+        //        Debug.Log("과잉 오류처리에????");
+        //        Debug.Log("과잉 오류처리에????");
+        //        Debug.Log("과잉 오류처리에????");
+        //        Debug.Log("과잉 오류처리에????");
+        //        Debug.Log("송신후????");
+        //        Debug.Log("송신후????");
+        //        Debug.Log("송신후????");
+        //        Debug.Log("송신후????");
+        //        // TCP 데이터 수신 시작
+        //        Debug.Log("수시닝????");
+        //        Debug.Log("수시닝????");
+        //        Debug.Log("수시닝????");
+        //        Debug.Log("수시닝????");
+
+        //    });
+        //    SendToTcpServer(ConnectionState.Connecting, new { playerName = "client" });
+        //    StartCoroutine(ReceiveFromTCPServerCoroutine(ServerIp, ServerPort));
+
+        //}
+        //catch (Exception e)
+        //{
+        //    Debug.Log("과잉 오류처리에");
+        //    Debug.Log("과잉 오류처리에");
+        //    Debug.Log("과잉 오류처리에");
+        //    Debug.Log("과잉 오류처리에");
+
+        //    Debug.Log(e.ToString());
+        //    StartCoroutine(ReStart(ServerIp, ServerPort));
+        //}
 
 
     }

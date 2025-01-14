@@ -36,6 +36,9 @@
     <ClInclude Include="SubServer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="DatabaseHelper.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="헤더 파일">

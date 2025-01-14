@@ -122,7 +122,7 @@ public class UdpClientManager : MonoBehaviour
 
                 try
                 {
-                    udpClient.Client.ReceiveTimeout = 5;  // 1초 타임아웃 설정
+                    //udpClient.Client.ReceiveTimeout = 5;  // 1초 타임아웃 설정
                     data = udpClient.Receive(ref remoteEP);
 
                 }
