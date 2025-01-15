@@ -1,4 +1,4 @@
-using static UnityEditor.Progress;
+//using static UnityEditor.Progress;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,10 +19,10 @@ public class PlayerModel
     public int Intelligence { get; set; } // 지능
 
     // 장비
-    public List<Item> EquippedItems { get; set; } // 착용 중인 장비 리스트
+    //public List<Item> EquippedItems { get; set; } // 착용 중인 장비 리스트
 
     // 인벤토리
-    public List<Item> Inventory { get; set; } // 인벤토리에 있는 아이템 리스트
+    //public List<Item> Inventory { get; set; } // 인벤토리에 있는 아이템 리스트
 
     // 퀘스트 진행 상황
     //public List<Quest> Quests { get; set; } // 플레이어가 진행 중인 퀘스트

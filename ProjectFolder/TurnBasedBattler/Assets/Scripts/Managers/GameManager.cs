@@ -60,8 +60,8 @@ public class GameManager : MonoBehaviour
     private ServerUIManager serverUIManager;
 
     //[SerializeField]
-    public Dictionary<int, GameObject> gameObjects = new Dictionary<int, GameObject>();
-    public Dictionary<int, Dictionary<int, GameObject>> gameObjects2 = new Dictionary<int, Dictionary<int, GameObject>>();
+    public Dictionary<int, GameObject> gameObjects = new ();
+    public Dictionary<int, Dictionary<int, GameObject>> gameObjects2 = new ();
 
     public List<GameObject> ServerObjects;
 
@@ -100,7 +100,7 @@ public class GameManager : MonoBehaviour
         return playerInfoManager.GetPlayerId();
     }
 
-    public void updateObjects()
+    public void UpdateObjects()
     {
         // gameObjects2에 gameObjects를 내 ID와 함께 넣기
         int playerId = GetPlayerId(); // 현재 유저 ID를 가져옴
