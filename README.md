@@ -201,6 +201,6 @@
 <details>
 <summary>시연영상 보기</summary>
   
-![시연 영상](https://github.com/kimjaehui02/TurnBasedBattler/blob/main/bandicam%202025-01-15%2017-38-59-197.mp4)
+[![시연 영상](https://img.youtube.com/vi/fYYXfPfBqIY/0.jpg)](https://youtu.be/fYYXfPfBqIY)
 
 </details>
