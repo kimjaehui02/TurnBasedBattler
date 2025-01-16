@@ -50,16 +50,15 @@ public class TransformManager : MonoBehaviour
     public void ObjectUpdate(in Dictionary<int, Dictionary<int, ObjectTransform>> keyValuePairs)
     {
         // 서버에서 받은 클라이언트 목록
-        HashSet<int> receivedClientIds = new HashSet<int>(keyValuePairs.Keys);
+        HashSet<int> receivedClientIds = new (keyValuePairs.Keys);
 
         // 1. 클라이언트가 종료되었을 때 오브젝트 제거
-        List<GameObject> objectsToRemove = new List<GameObject>();
+        List<GameObject> objectsToRemove = new();
 
         // 기존 오브젝트들 순회하며 클라이언트 ID가 더 이상 없으면 제거
         foreach (var parentObject in GameManager.Instance.ServerObjects)
         {
-            int userId;
-            if (int.TryParse(parentObject.name, out userId))
+            if (int.TryParse(parentObject.name, out int userId))
             {
                 if (!receivedClientIds.Contains(userId))
                 {

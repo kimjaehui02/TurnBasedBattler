@@ -36,7 +36,7 @@ public class PlayerManager : MonoBehaviour
         Vector2 moveDirection = new Vector2(moveX, moveY).normalized;
 
         // 이동: Rigidbody2D를 사용하여 위치 업데이트
-        rb.MovePosition(rb.position + moveDirection * moveSpeed * Time.deltaTime);
+        rb.MovePosition(rb.position + moveSpeed * Time.deltaTime * moveDirection);
     }
 
 

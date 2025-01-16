@@ -18,7 +18,7 @@ public class TransformConverter
             Transform objTransform = obj.transform;
 
             // ObjectTransform 객체 생성 및 값 할당
-            ObjectTransform objectTransform = new ObjectTransform()
+            ObjectTransform objectTransform = new ()
             {
                 PositionX = objTransform.position.x,
                 PositionY = objTransform.position.y,

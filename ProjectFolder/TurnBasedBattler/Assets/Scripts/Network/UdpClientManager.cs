@@ -111,7 +111,7 @@ public class UdpClientManager : MonoBehaviour
     public IEnumerator ReceiveFromUDPServerCoroutine()
     {
         IPEndPoint remoteEP = null;
-        byte[] data = null;
+        byte[] data;
 
         // 데이터 수신 코드
         while (true)
